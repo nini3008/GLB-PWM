@@ -1,2 +1,2 @@
 # GLB-PWM
-Golf Leaderboard App - Web App
+Golf Leaderboard Web App
