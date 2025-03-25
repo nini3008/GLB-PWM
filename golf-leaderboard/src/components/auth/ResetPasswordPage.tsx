@@ -58,6 +58,7 @@ export default function ResetPasswordPage({ onComplete }: ResetPasswordPageProps
           onComplete();
         }, 3000);
       }
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
     } catch (err: any) {
       setError(err?.message || 'An unexpected error occurred');
       console.error(err);

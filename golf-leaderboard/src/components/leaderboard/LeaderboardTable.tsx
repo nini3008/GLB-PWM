@@ -40,15 +40,6 @@ interface LeaderboardPlayer {
     avg_score: number;
   }
 
-interface Season {
-    id: string;
-    name: string;
-    code: string;
-    start_date: string;
-    end_date: string | null;
-    is_active: boolean;
-  }
-
 interface LeaderboardProps {
   seasonId?: string;
   onReturn: () => void;
@@ -259,7 +250,7 @@ export function LeaderboardTable({ seasonId, onReturn }: LeaderboardProps) {
             Leaderboard
           </CardTitle>
           <CardDescription className="text-sm sm:text-base">
-            See who's leading the competition
+            See who&apos;s leading the competition
           </CardDescription>
         </div>
         <Button 

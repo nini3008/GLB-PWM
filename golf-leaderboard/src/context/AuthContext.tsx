@@ -9,7 +9,7 @@ import {
   AuthChangeEvent 
 } from '@supabase/supabase-js';
 import { PostgrestError } from '@supabase/postgrest-js';
-import { supabase, getUserProfile, isUserAdmin } from '../lib/supabase/client';
+import { supabase, getUserProfile } from '../lib/supabase/client';
 
 // User profile type that matches the structure from Supabase
 interface UserProfile {

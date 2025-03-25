@@ -13,14 +13,12 @@ import {
   CardDescription,
   CardHeader,
   CardTitle,
-  CardFooter,
 } from "@/components/ui/card";
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
-import { Skeleton } from '@/components/ui/skeleton';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -186,6 +184,7 @@ export default function ManageScoresView({ onReturn }: { onReturn: () => void })
       toast.success("Round loaded", {
         description: `Viewing scores for ${game.name} at ${game.courses.name}`,
       });
+       // eslint-disable-next-line @typescript-eslint/no-explicit-any
     } catch (error: any) {
       if (process.env.NODE_ENV !== 'production') {
         console.error("Round code validation error:", {
@@ -333,6 +332,7 @@ export default function ManageScoresView({ onReturn }: { onReturn: () => void })
         description: "The score and points have been updated successfully.",
       });
     } catch (error) {
+      console.log(error);
       toast.error("Error updating score", {
         description: "Please try again.",
       });
@@ -383,6 +383,7 @@ export default function ManageScoresView({ onReturn }: { onReturn: () => void })
         description: "The score has been removed from the leaderboard.",
       });
     } catch (error) {
+      console.log(error);
       toast.error("Error deleting score", {
         description: "Please try again.",
       });

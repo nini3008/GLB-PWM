@@ -11,8 +11,7 @@ import {
   CardContent,
   CardDescription,
   CardHeader,
-  CardTitle, 
-  CardFooter,
+  CardTitle,
 } from "@/components/ui/card";
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -209,7 +208,7 @@ export default function CreateGameForm({ onReturn }: { onReturn: () => void }) {
       setTimeout(() => {
         onReturn();
       }, 5000);
-      
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
     } catch (error: any) {
       // Handle specific errors
       if (error.message?.includes("duplicate key")) {
@@ -335,7 +334,7 @@ export default function CreateGameForm({ onReturn }: { onReturn: () => void }) {
                   Return to Dashboard
                 </Button>
                 <p className="text-sm text-gray-500">
-                  You'll be redirected automatically in a few seconds...
+                  You&apos;ll be redirected automatically in a few seconds...
                 </p>
               </div>
             </div>

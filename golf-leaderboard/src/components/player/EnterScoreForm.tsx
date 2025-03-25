@@ -155,6 +155,7 @@ export default function EnterScoreForm({ onReturn }: { onReturn: () => void }) {
       toast.success("Round code valid", {
         description: `Ready to submit score for ${game.name} at ${game.courses.name}`,
       });
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
     } catch (error: any) {
       if (process.env.NODE_ENV !== 'production') {
         console.error("Round code validation error:", {
@@ -209,6 +210,7 @@ export default function EnterScoreForm({ onReturn }: { onReturn: () => void }) {
       setCalculatedScore(calculatedScore);
       setShowConfirmation(true);
     } catch (error) {
+      console.log(error)
       toast.error("Error calculating score", {
         description: "Please try again.",
       });

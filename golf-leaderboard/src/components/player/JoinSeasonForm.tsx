@@ -12,7 +12,6 @@ import {
   CardDescription,
   CardHeader,
   CardTitle,
-  CardFooter,
 } from "@/components/ui/card";
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -95,7 +94,7 @@ export default function JoinSeasonForm({ onReturn }: JoinSeasonFormProps) {
       setTimeout(() => {
         onReturn();
       }, 3000);
-      
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
     } catch (error: any) {
       console.error("Season join error:", {
         error,
@@ -181,7 +180,7 @@ export default function JoinSeasonForm({ onReturn }: JoinSeasonFormProps) {
                   Return to Dashboard
                 </Button>
                 <p className="text-sm text-gray-500">
-                  You'll be redirected automatically in a few seconds...
+                  You&apos;ll be redirected automatically in a few seconds...
                 </p>
               </div>
             </div>
@@ -195,7 +194,7 @@ export default function JoinSeasonForm({ onReturn }: JoinSeasonFormProps) {
                   <h3 className="font-medium text-green-800 mb-1">How to join a season</h3>
                   <p className="text-sm text-green-700 leading-relaxed">
                     Enter the unique season code provided by your administrator or league organizer. 
-                    Each code gives you access to a specific season's tournaments, leaderboards and events.
+                    Each code gives you access to a specific season&apos;s tournaments, leaderboards and events.
                   </p>
                 </div>
               </div>
@@ -238,7 +237,7 @@ export default function JoinSeasonForm({ onReturn }: JoinSeasonFormProps) {
                 <div className="bg-amber-50 p-4 rounded-lg border border-amber-100">
                   <p className="text-sm text-amber-800 flex items-start gap-2">
                     <AlertCircle className="h-5 w-5 text-amber-500 flex-shrink-0" />
-                    <span>You only need to join a season once. After joining, you'll have access to all rounds and events in that season.</span>
+                    <span>You only need to join a season once. After joining, you&apos;ll have access to all rounds and events in that season.</span>
                   </p>
                 </div>
                 

@@ -10,7 +10,6 @@ import {
     Card,
     CardContent,
     CardDescription,
-    CardFooter,
     CardHeader,
     CardTitle,
   } from "@/components/ui/card"
@@ -28,13 +27,6 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
-import { 
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select';
 import { 
   Table, 
   TableBody, 
@@ -197,6 +189,7 @@ useEffect(() => {
       toast.success("Round loaded", {
         description: `Viewing scores for ${game.name} at ${game.courses.name}`,
       });
+       // eslint-disable-next-line @typescript-eslint/no-explicit-any
     } catch (error: any) {
       console.error('Round code validation error:', error);
       const errorMsg = "Invalid round code. Please check and try again.";
@@ -305,6 +298,7 @@ useEffect(() => {
         description: "The score and points have been updated successfully.",
       });
     } catch (error) {
+        console.error(error)
       toast.error("Error updating score",{
         description: "Please try again.",
       });
@@ -338,6 +332,7 @@ useEffect(() => {
         description: "The score has been removed from the leaderboard.",
       });
     } catch (error) {
+      console.error(error)
       toast.error("Error deleting score", {
         description: "Please try again.",
       });

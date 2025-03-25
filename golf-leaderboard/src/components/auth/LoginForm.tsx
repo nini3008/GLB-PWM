@@ -102,7 +102,7 @@ export default function LoginForm({ onRegisterClick, onForgotPasswordClick }: Lo
       
       <div className="mt-4 text-center">
         <p className="text-gray-600">
-          Don't have an account?{' '}
+          Don&apos;t have an account?{' '}
           <button 
             onClick={onRegisterClick} 
             className="text-green-600 hover:underline"

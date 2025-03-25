@@ -9,10 +9,8 @@ import { useUser } from '@/hooks/useUser';
 import {
   Card,
   CardContent,
-  CardDescription,
   CardHeader,
   CardTitle,
-  CardFooter,
 } from "@/components/ui/card";
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -22,7 +20,7 @@ import { ArrowLeft, User, Save, Calendar, Flag, Award, TrendingUp } from 'lucide
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Badge } from "@/components/ui/badge";
-import { getUserRecentScores, supabase } from '@/lib/supabase/client';
+import { getUserRecentScores } from '@/lib/supabase/client';
 import { useAuth } from '@/context/AuthContext';
 
 // Form validation schema
@@ -60,6 +58,7 @@ export default function ProfileForm({ onReturn }: { onReturn: () => void }) {
   const [recentScores, setRecentScores] = useState<RecentScore[]>([]);
   const [isLoadingScores, setIsLoadingScores] = useState(true);
   const [formattedDates, setFormattedDates] = useState<Record<string, string>>({});
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const [activeTab, setActiveTab] = useState("profile");
 
   const form = useForm<ProfileFormValues>({

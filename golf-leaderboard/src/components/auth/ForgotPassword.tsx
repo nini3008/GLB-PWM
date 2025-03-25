@@ -35,6 +35,7 @@ export default function ForgotPasswordForm({ onBackToLogin }: ForgotPasswordForm
       } else {
         setSuccess(true);
       }
+       // eslint-disable-next-line @typescript-eslint/no-explicit-any
     } catch (err: any) {
       setError(err?.message || 'An unexpected error occurred');
       console.error(err);
@@ -75,7 +76,7 @@ export default function ForgotPasswordForm({ onBackToLogin }: ForgotPasswordForm
       ) : (
         <>
           <p className="text-gray-600 mb-6 text-center">
-            Enter your email address and we'll send you instructions to reset your password.
+            Enter your email address and we&apos;ll send you instructions to reset your password.
           </p>
           
           {error && (

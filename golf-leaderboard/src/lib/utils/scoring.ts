@@ -28,6 +28,7 @@ export interface ScoreData {
    * - 75-79: 5 points
    * - Below 75: 6 points
    */
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   export function calculatePoints(rawScore: number, coursePar: number): number {
     if (rawScore >= 100) return 0;
     if (rawScore >= 96) return 1;
@@ -112,6 +113,7 @@ export function calculateFullScore(
   /**
    * Get the most recent 10 rounds for display
    */
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   export function getRecentRounds(rounds: any[], limit: number = 10) {
     return [...rounds]
       .sort((a, b) => new Date(b.game_date).getTime() - new Date(a.game_date).getTime())

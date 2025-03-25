@@ -5,7 +5,7 @@ import React, { useState, useEffect, useRef, Suspense } from 'react';
 import { useAuth } from '@/context/AuthContext';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Card, CardContent } from '@/components/ui/card';
-import { LoaderCircle, GoalIcon } from 'lucide-react';
+import { GoalIcon } from 'lucide-react';
 
 // Dynamic imports for better performance and code splitting
 const LoginForm = React.lazy(() => import('./auth/LoginForm'));
@@ -93,7 +93,7 @@ export function GolfLeaderboardApp() {
     }, 200);
     
     return () => clearTimeout(timer);
-  }, [user]); // Remove currentView from dependencies
+  }, [user]);
 
   // Navigation with transition
   const navigateTo = (view: React.SetStateAction<string>) => {

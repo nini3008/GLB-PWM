@@ -91,7 +91,7 @@ export async function submitScore(scoreData: {
   notes?: string;
 }) {
   // First, let's debug by getting all columns
-  const { data: debugData, error: debugError } = await supabase
+  const { data: debugData } = await supabase
     .from('games')
     .select('*')
     .eq('id', scoreData.game_id)
@@ -261,7 +261,7 @@ export async function validateRoundCode(roundCode: string) {
 
 // Check if the user has already submitted a score for this game
 export async function hasUserSubmittedScore(gameId: string, playerId: string) {
-  const { data, error, count } = await supabase
+  const { error, count } = await supabase
     .from('scores')
     .select('id', { count: 'exact' })
     .eq('game_id', gameId)
@@ -273,7 +273,7 @@ export async function hasUserSubmittedScore(gameId: string, playerId: string) {
 
 // Check if user is part of the season for this game
 export async function isUserInSeason(seasonId: string, playerId: string) {
-  const { data, error, count } = await supabase
+  const { error, count } = await supabase
     .from('season_participants')
     .select('id', { count: 'exact' })
     .eq('season_id', seasonId)
