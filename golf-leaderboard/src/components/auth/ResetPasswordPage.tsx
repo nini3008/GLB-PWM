@@ -14,6 +14,7 @@ export default function ResetPasswordPage({ onComplete }: ResetPasswordPageProps
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState(false);
+  const [countdown, setCountdown] = useState(3);
 
   // Verify that we have a valid reset token in the URL
   useEffect(() => {
@@ -27,19 +28,33 @@ export default function ResetPasswordPage({ onComplete }: ResetPasswordPageProps
     checkSession();
   }, []);
 
-  // Handle redirection after successful reset
+  // Handle redirection after successful reset with visible countdown
   useEffect(() => {
-    let redirectTimer: NodeJS.Timeout;
+    if (!success) return;
     
-    if (success) {
-      redirectTimer = setTimeout(() => {
-        console.log('Redirecting after password reset...');
-        onComplete();
-      }, 3000);
-    }
+    console.log('Starting redirect countdown...');
+    
+    // Create countdown effect
+    const countdownInterval = setInterval(() => {
+      setCountdown(prev => {
+        if (prev <= 1) {
+          clearInterval(countdownInterval);
+          return 0;
+        }
+        return prev - 1;
+      });
+    }, 1000);
+    
+    // Actual redirect
+    const redirectTimer = setTimeout(() => {
+      console.log('Executing redirect now!');
+      // Force navigation to home
+      window.location.href = '/';
+    }, 3000);
     
     return () => {
-      if (redirectTimer) clearTimeout(redirectTimer);
+      clearInterval(countdownInterval);
+      clearTimeout(redirectTimer);
     };
   }, [success, onComplete]);
 
@@ -72,9 +87,8 @@ export default function ResetPasswordPage({ onComplete }: ResetPasswordPageProps
       } else {
         console.log('Password updated successfully!');
         setSuccess(true);
-        // We now handle redirection in the useEffect above
       }
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+       // eslint-disable-next-line @typescript-eslint/no-explicit-any
     } catch (err: any) {
       console.error('Password update exception:', err);
       setError(err?.message || 'An unexpected error occurred');
@@ -99,7 +113,7 @@ export default function ResetPasswordPage({ onComplete }: ResetPasswordPageProps
       {success ? (
         <div className="mb-4 p-3 bg-green-50 text-green-700 rounded-md border border-green-200">
           <p className="font-medium">Your password has been successfully reset!</p>
-          <p className="mt-2">Redirecting to login page...</p>
+          <p className="mt-2">Redirecting to home page in {countdown} seconds...</p>
           <div className="w-full bg-gray-200 h-1 mt-4 rounded overflow-hidden">
             <div 
               className="bg-green-500 h-full" 
@@ -115,6 +129,12 @@ export default function ResetPasswordPage({ onComplete }: ResetPasswordPageProps
               100% { width: 100%; }
             }
           `}</style>
+          <button
+            onClick={() => window.location.href = '/'}
+            className="w-full mt-4 bg-green-600 hover:bg-green-700 text-white py-2 rounded font-bold transition duration-200"
+          >
+            Go to Home Page Now
+          </button>
         </div>
       ) : (
         <form onSubmit={handleSubmit}>
