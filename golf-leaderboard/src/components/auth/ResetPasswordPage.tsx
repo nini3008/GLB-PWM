@@ -101,8 +101,20 @@ export default function ResetPasswordPage({ onComplete }: ResetPasswordPageProps
           <p className="font-medium">Your password has been successfully reset!</p>
           <p className="mt-2">Redirecting to login page...</p>
           <div className="w-full bg-gray-200 h-1 mt-4 rounded overflow-hidden">
-            <div className="bg-green-500 h-full animate-progress"></div>
+            <div 
+              className="bg-green-500 h-full" 
+              style={{ 
+                animation: 'progressAnim 3s linear forwards',
+                width: '0%' 
+              }}
+            ></div>
           </div>
+          <style jsx>{`
+            @keyframes progressAnim {
+              0% { width: 0; }
+              100% { width: 100%; }
+            }
+          `}</style>
         </div>
       ) : (
         <form onSubmit={handleSubmit}>
@@ -157,14 +169,3 @@ export default function ResetPasswordPage({ onComplete }: ResetPasswordPageProps
     </div>
   );
 }
-
-// Add this to your global CSS or inline it if needed
-const styles = `
-@keyframes progress {
-  0% { width: 0; }
-  100% { width: 100%; }
-}
-.animate-progress {
-  animation: progress 3s linear forwards;
-}
-`;
