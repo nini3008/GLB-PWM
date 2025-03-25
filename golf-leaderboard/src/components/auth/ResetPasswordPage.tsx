@@ -15,13 +15,34 @@ export default function ResetPasswordPage({ onComplete }: ResetPasswordPageProps
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState(false);
   const [countdown, setCountdown] = useState(3);
+  const [debugInfo, setDebugInfo] = useState<string>('');
 
   // Verify that we have a valid reset token in the URL
   useEffect(() => {
     const checkSession = async () => {
-      const { data, error } = await supabase.auth.getSession();
-      if (error || !data.session) {
-        setError('Invalid or expired password reset link. Please request a new reset link.');
+      try {
+        console.log('Checking session...');
+        setDebugInfo(prev => prev + '\nChecking session...');
+        
+        const { data, error } = await supabase.auth.getSession();
+        
+        if (error) {
+          console.error('Session check error:', error);
+          setDebugInfo(prev => prev + `\nSession error: ${error.message}`);
+          setError(`Invalid session: ${error.message}`);
+          return;
+        }
+        
+        console.log('Session data:', data);
+        setDebugInfo(prev => prev + `\nSession found: ${data.session ? 'Yes' : 'No'}`);
+        
+        if (!data.session) {
+          setError('Invalid or expired password reset link. Please request a new reset link.');
+        }
+      } catch (err) {
+        console.error('Session check exception:', err);
+        setDebugInfo(prev => prev + `\nSession check exception: ${String(err)}`);
+        setError('An error occurred while verifying your session.');
       }
     };
 
@@ -33,6 +54,7 @@ export default function ResetPasswordPage({ onComplete }: ResetPasswordPageProps
     if (!success) return;
     
     console.log('Starting redirect countdown...');
+    setDebugInfo(prev => prev + '\nStarting redirect countdown...');
     
     // Create countdown effect
     const countdownInterval = setInterval(() => {
@@ -48,6 +70,7 @@ export default function ResetPasswordPage({ onComplete }: ResetPasswordPageProps
     // Actual redirect
     const redirectTimer = setTimeout(() => {
       console.log('Executing redirect now!');
+      setDebugInfo(prev => prev + '\nExecuting redirect now!');
       // Force navigation to home
       window.location.href = '/';
     }, 3000);
@@ -62,10 +85,12 @@ export default function ResetPasswordPage({ onComplete }: ResetPasswordPageProps
     e.preventDefault();
     setIsLoading(true);
     setError(null);
+    setDebugInfo('Password reset started...');
 
     // Validate password
     if (password.length < 8) {
       setError('Password must be at least 8 characters long');
+      setDebugInfo(prev => prev + '\nPassword too short');
       setIsLoading(false);
       return;
     }
@@ -73,28 +98,60 @@ export default function ResetPasswordPage({ onComplete }: ResetPasswordPageProps
     // Validate password match
     if (password !== confirmPassword) {
       setError('Passwords do not match');
+      setDebugInfo(prev => prev + '\nPasswords don\'t match');
       setIsLoading(false);
       return;
     }
 
     try {
       console.log('Updating password...');
-      const { error } = await supabase.auth.updateUser({ password });
+      setDebugInfo(prev => prev + '\nUpdating password with Supabase...');
+      
+      // Additional check to ensure session exists
+      const sessionCheck = await supabase.auth.getSession();
+      if (!sessionCheck.data.session) {
+        setError('No active session found. Please request a new reset link.');
+        setDebugInfo(prev => prev + '\nNo active session for password update');
+        setIsLoading(false);
+        return;
+      }
+      
+      // Check what user we're updating for
+      setDebugInfo(prev => prev + `\nUser ID: ${sessionCheck.data.session?.user?.id || 'unknown'}`);
+      
+      // Try the update
+      const { data, error } = await supabase.auth.updateUser({ password });
+      
+      console.log('Update response:', { data, error });
+      setDebugInfo(prev => prev + 
+        `\nUpdate response: ${error ? 'Error: ' + error.message : 'Success'}`);
 
       if (error) {
         console.error('Password update error:', error);
         setError(error.message);
       } else {
         console.log('Password updated successfully!');
-        setSuccess(true);
+        setDebugInfo(prev => prev + '\nPassword updated successfully! Setting success state...');
+        
+        // Force a slight delay to ensure state is updated
+        setTimeout(() => {
+          setSuccess(true);
+          setDebugInfo(prev => prev + '\nSuccess state set to TRUE');
+        }, 100);
       }
-       // eslint-disable-next-line @typescript-eslint/no-explicit-any
     } catch (err: any) {
       console.error('Password update exception:', err);
+      setDebugInfo(prev => prev + `\nPassword update exception: ${err?.message || String(err)}`);
       setError(err?.message || 'An unexpected error occurred');
     } finally {
       setIsLoading(false);
     }
+  };
+
+  // Emergency redirect function
+  const forceRedirect = () => {
+    console.log('Force redirecting to home...');
+    window.location.href = '/';
   };
 
   return (
@@ -130,7 +187,7 @@ export default function ResetPasswordPage({ onComplete }: ResetPasswordPageProps
             }
           `}</style>
           <button
-            onClick={() => window.location.href = '/'}
+            onClick={forceRedirect}
             className="w-full mt-4 bg-green-600 hover:bg-green-700 text-white py-2 rounded font-bold transition duration-200"
           >
             Go to Home Page Now
@@ -184,8 +241,32 @@ export default function ResetPasswordPage({ onComplete }: ResetPasswordPageProps
               'Reset Password'
             )}
           </button>
+          
+          {isLoading && (
+            <p className="text-sm text-gray-500 mt-2 text-center">
+              This may take a moment...
+            </p>
+          )}
+          
+          <div className="mt-4">
+            <button
+              type="button"
+              onClick={forceRedirect}
+              className="w-full text-green-600 hover:text-green-800 text-sm py-2"
+            >
+              Cancel and return to login
+            </button>
+          </div>
         </form>
       )}
+      
+      {/* Debug information - remove in production */}
+      <div className="mt-8 border-t pt-4 text-xs font-mono text-gray-500 whitespace-pre-wrap">
+        <details>
+          <summary className="cursor-pointer">Debug Info</summary>
+          {debugInfo || 'No debug information available'}
+        </details>
+      </div>
     </div>
   );
 }
