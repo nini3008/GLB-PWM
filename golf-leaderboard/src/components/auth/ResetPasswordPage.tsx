@@ -27,6 +27,22 @@ export default function ResetPasswordPage({ onComplete }: ResetPasswordPageProps
     checkSession();
   }, []);
 
+  // Handle redirection after successful reset
+  useEffect(() => {
+    let redirectTimer: NodeJS.Timeout;
+    
+    if (success) {
+      redirectTimer = setTimeout(() => {
+        console.log('Redirecting after password reset...');
+        onComplete();
+      }, 3000);
+    }
+    
+    return () => {
+      if (redirectTimer) clearTimeout(redirectTimer);
+    };
+  }, [success, onComplete]);
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
@@ -47,21 +63,21 @@ export default function ResetPasswordPage({ onComplete }: ResetPasswordPageProps
     }
 
     try {
+      console.log('Updating password...');
       const { error } = await supabase.auth.updateUser({ password });
 
       if (error) {
+        console.error('Password update error:', error);
         setError(error.message);
       } else {
+        console.log('Password updated successfully!');
         setSuccess(true);
-        // Redirect to login after 3 seconds
-        setTimeout(() => {
-          onComplete();
-        }, 3000);
+        // We now handle redirection in the useEffect above
       }
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
     } catch (err: any) {
+      console.error('Password update exception:', err);
       setError(err?.message || 'An unexpected error occurred');
-      console.error(err);
     } finally {
       setIsLoading(false);
     }
@@ -82,7 +98,11 @@ export default function ResetPasswordPage({ onComplete }: ResetPasswordPageProps
 
       {success ? (
         <div className="mb-4 p-3 bg-green-50 text-green-700 rounded-md border border-green-200">
-          Your password has been successfully reset! Redirecting to login page...
+          <p className="font-medium">Your password has been successfully reset!</p>
+          <p className="mt-2">Redirecting to login page...</p>
+          <div className="w-full bg-gray-200 h-1 mt-4 rounded overflow-hidden">
+            <div className="bg-green-500 h-full animate-progress"></div>
+          </div>
         </div>
       ) : (
         <form onSubmit={handleSubmit}>
@@ -123,10 +143,28 @@ export default function ResetPasswordPage({ onComplete }: ResetPasswordPageProps
             className="w-full bg-green-600 hover:bg-green-700 text-white py-2 rounded font-bold transition duration-200 disabled:opacity-50"
             disabled={isLoading}
           >
-            {isLoading ? 'Processing...' : 'Reset Password'}
+            {isLoading ? (
+              <div className="flex items-center justify-center gap-2">
+                <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                <span>Processing...</span>
+              </div>
+            ) : (
+              'Reset Password'
+            )}
           </button>
         </form>
       )}
     </div>
   );
 }
+
+// Add this to your global CSS or inline it if needed
+const styles = `
+@keyframes progress {
+  0% { width: 0; }
+  100% { width: 100%; }
+}
+.animate-progress {
+  animation: progress 3s linear forwards;
+}
+`;
