@@ -139,6 +139,7 @@ export default function ResetPasswordPage({ onComplete }: ResetPasswordPageProps
           setDebugInfo(prev => prev + '\nSuccess state set to TRUE');
         }, 100);
       }
+       // eslint-disable-next-line @typescript-eslint/no-explicit-any
     } catch (err: any) {
       console.error('Password update exception:', err);
       setDebugInfo(prev => prev + `\nPassword update exception: ${err?.message || String(err)}`);
