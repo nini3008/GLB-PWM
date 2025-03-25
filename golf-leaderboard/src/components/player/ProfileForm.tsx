@@ -18,8 +18,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
-import { ArrowLeft, Upload, User, Save, Camera, Calendar, Flag, Award, TrendingUp } from 'lucide-react';
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { ArrowLeft, User, Save, Calendar, Flag, Award, TrendingUp } from 'lucide-react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Badge } from "@/components/ui/badge";
@@ -55,10 +54,9 @@ interface RecentScore {
 }
 
 export default function ProfileForm({ onReturn }: { onReturn: () => void }) {
-  const { user, profile, updateUserProfile, updateProfileImage } = useUser();
+  const { user, profile } = useUser();
   const { updateProfile } = useAuth(); 
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [isUploading, setIsUploading] = useState(false);
   const [recentScores, setRecentScores] = useState<RecentScore[]>([]);
   const [isLoadingScores, setIsLoadingScores] = useState(true);
   const [formattedDates, setFormattedDates] = useState<Record<string, string>>({});
@@ -189,113 +187,7 @@ export default function ProfileForm({ onReturn }: { onReturn: () => void }) {
       }
   };
 
-// Handle image upload with enhanced debugging
-const handleImageUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
-    const file = event.target.files?.[0];
-    if (!file || !user) {
-      console.log("No file selected or user not found");
-      return;
-    }
-    
-    console.log("File selected:", file.name, file.type, file.size);
-    
-    // Basic validation
-    if (!file.type.startsWith('image/')) {
-      toast.error("Invalid file type", {
-        description: "Please upload an image file."
-      });
-      return;
-    }
-    
-    if (file.size > 5 * 1024 * 1024) {
-      toast.error("File too large", {
-        description: "Please upload an image smaller than 5MB."
-      });
-      return;
-    }
-    
-    setIsUploading(true);
-    console.log("Starting upload process...");
-    
-    try {
-      // Direct upload test to isolate the issue
-      console.log("Attempting direct upload to storage");
-      
-      // Create a safer file path
-      const fileExt = file.name.split('.').pop();
-      const fileName = `${Date.now()}.${fileExt}`;
-      const filePath = `${user.id}/${fileName}`;
-      
-      console.log("Upload path:", filePath);
-      
-      // Test direct upload
-      const { data, error } = await supabase.storage
-        .from('avatars')
-        .upload(filePath, file, {
-          cacheControl: '3600',
-          upsert: true
-        });
-        
-      console.log("Direct upload result:", { data, error });
-      
-      if (error) {
-        console.error("Upload error:", error);
-        throw new Error(error.message);
-      } else {
-        // If upload works, attempt to get URL
-        console.log("Upload successful, getting public URL");
-        const urlData = supabase.storage
-          .from('avatars')
-          .getPublicUrl(filePath);
-          
-        console.log("Public URL result:", urlData);
-        
-        // Then try updating profile
-        console.log("Updating profile with new image URL");
-        const updateResult = await supabase
-          .from('profiles')
-          .update({ profile_image_url: urlData.data.publicUrl })
-          .eq('id', user.id);
-          
-        console.log("Profile update result:", updateResult);
-        
-        if (updateResult.error) {
-          throw new Error(updateResult.error.message);
-        }
-        
-        toast.success("Profile image updated");
-      }
-    } catch (error) {
-      console.error('Upload process error:', error);
-      let errorMessage = "Please try again later.";
-      if (error instanceof Error) {
-        errorMessage = error.message;
-      }
-      
-      toast.error("Failed to update profile image", {
-        description: errorMessage
-      });
-    } finally {
-      setIsUploading(false);
-      console.log("Upload process complete");
-    }
-  };
 
-  // Get user initials for avatar fallback
-  const getUserInitials = () => {
-    if (!profile) return 'U';
-    
-    const firstInitial = profile.first_name?.[0] || '';
-    const lastInitial = profile.last_name?.[0] || '';
-    
-    if (firstInitial && lastInitial) {
-      return `${firstInitial}${lastInitial}`;
-    } else if (profile.username) {
-      return profile.username[0].toUpperCase();
-    }
-    
-    return 'U';
-  };
 
   return (
     <div className="container max-w-6xl mx-auto px-4 py-6 space-y-8">
@@ -318,33 +210,6 @@ const handleImageUpload = async (event: React.ChangeEvent<HTMLInputElement>) => 
       {/* Profile Header */}
       <div className="bg-gradient-to-r from-green-600 to-emerald-500 rounded-xl p-6 shadow-lg mb-8">
         <div className="flex flex-col sm:flex-row items-center gap-6">
-          <div className="relative">
-            <Avatar className="h-24 w-24 sm:h-32 sm:w-32 border-4 border-white/30 shadow-lg">
-              <AvatarImage 
-                src={profile?.profile_image_url || undefined} 
-                alt={profile?.username || 'Profile picture'} 
-              />
-              <AvatarFallback className="text-3xl bg-white/10 text-white">
-                {getUserInitials()}
-              </AvatarFallback>
-            </Avatar>
-            <div className="absolute -bottom-2 -right-2">
-              <label htmlFor="profile-image" className="cursor-pointer">
-                <div className="flex items-center justify-center h-10 w-10 rounded-full bg-white text-green-600 hover:text-green-700 transition-colors shadow-md">
-                  <Camera className="h-5 w-5" />
-                </div>
-                <input
-                  id="profile-image"
-                  type="file"
-                  accept="image/*"
-                  className="sr-only"
-                  onChange={handleImageUpload}
-                  disabled={isUploading}
-                />
-              </label>
-            </div>
-          </div>
-          
           <div className="text-center sm:text-left text-white">
             <h2 className="text-2xl sm:text-3xl font-bold">
               {profile?.first_name && profile?.last_name 

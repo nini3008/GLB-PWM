@@ -26,7 +26,7 @@ export interface ScoreData {
    * - 85-89: 3 points
    * - 80-84: 4 points
    * - 75-79: 5 points
-   * - Below 75: 6 points (added this assumption)
+   * - Below 75: 6 points
    */
   export function calculatePoints(rawScore: number, coursePar: number): number {
     if (rawScore >= 100) return 0;
@@ -47,10 +47,14 @@ export interface ScoreData {
     return rawScore <= Math.min(...allScoresInRound);
   }
   
-  /**
-   * Calculate all score details including points and bonus points
-   */
-  export function calculateFullScore(
+ /**
+ * Calculate all score details including points and bonus points
+ * 
+ * Note: This function calculates what the score WOULD BE if submitted now.
+ * To determine final bonus points for all players after submission,
+ * you should use the updateBonusPoints function.
+ */
+export function calculateFullScore(
     scoreData: ScoreData,
     allScoresInRound: number[]
   ): CalculatedScore {
@@ -58,14 +62,15 @@ export interface ScoreData {
     const overPar = rawScore - coursePar;
     const points = calculatePoints(rawScore, coursePar);
     
-    // Determine if this score gets a bonus point (lowest score in round)
-    // If this is a new score being entered, compare with existing scores
-    // If it's the lowest, it gets a bonus point
+    // Find the current lowest score among existing scores
     const currentLowestScore = allScoresInRound.length > 0 
       ? Math.min(...allScoresInRound) 
       : Infinity;
     
-    // Only add bonus point if it's the best score or tied for best
+    // Preview what would happen if this score is submitted
+    // If this score is lower than the current lowest, it will get a bonus point
+    // and everyone else will lose their bonus points
+    // If this score ties the current lowest, it will also get a bonus point
     const bonusPoints = (rawScore <= currentLowestScore) ? 1 : 0;
     
     return {
@@ -104,7 +109,6 @@ export interface ScoreData {
       shouldHaveBonus: score.rawScore === lowestScore
     }));
   }
-  
   /**
    * Get the most recent 10 rounds for display
    */

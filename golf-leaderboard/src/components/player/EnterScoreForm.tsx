@@ -42,9 +42,10 @@ import {
   hasUserSubmittedScore, 
   isUserInSeason,
   submitScore,
-  getGameScores
+  getGameScores,
+  updateScoreBonusPoints
 } from '@/lib/supabase/client';
-import { calculateFullScore } from '@/lib/utils/scoring';
+import { calculateFullScore, updateBonusPoints } from '@/lib/utils/scoring';
 import { Separator } from '@/components/ui/separator';
 import { Progress } from '@/components/ui/progress';
 
@@ -214,13 +215,17 @@ export default function EnterScoreForm({ onReturn }: { onReturn: () => void }) {
     }
   };
 
-  // Submit score after confirmation
-  const handleSubmitConfirmed = async () => {
+// Submit score after confirmation
+const handleSubmitConfirmed = async () => {
     if (!gameDetails || !calculatedScore || !user) return;
     
     setIsSubmitting(true);
     try {
-      await submitScore({
+      // First, get all existing scores for this game (before our new score is added)
+      const existingScores = await getGameScores(gameDetails.id);
+      
+      // Submit the new score
+      const newScore = await submitScore({
         game_id: gameDetails.id,
         player_id: user.id,
         raw_score: calculatedScore.rawScore,
@@ -228,6 +233,40 @@ export default function EnterScoreForm({ onReturn }: { onReturn: () => void }) {
         bonus_points: calculatedScore.bonusPoints,
         notes: form.getValues().notes,
       });
+      
+      // Create a combined array of all scores (existing + new score) 
+      // This saves us from having to fetch all scores again
+      const allScores = [
+        ...existingScores,
+        {
+          id: newScore.id,
+          player_id: user.id,
+          raw_score: calculatedScore.rawScore,
+          points: calculatedScore.points,
+          bonus_points: calculatedScore.bonusPoints
+        }
+      ];
+      
+      // Prepare data for bonus point calculation
+      const scoresForBonusUpdate = allScores.map(score => ({
+        playerId: score.player_id,
+        rawScore: score.raw_score,
+        bonusPoints: score.bonus_points
+      }));
+      
+      // Calculate which players should have bonus points
+      const bonusUpdates = updateBonusPoints(scoresForBonusUpdate);
+      
+      // Update bonus points in the database for all players if needed
+      for (const update of bonusUpdates) {
+        const shouldHaveBonus = update.shouldHaveBonus ? 1 : 0;
+        const scoreToUpdate = allScores.find(score => score.player_id === update.playerId);
+        
+        // If the bonus point status needs to change, update it
+        if (scoreToUpdate && scoreToUpdate.bonus_points !== shouldHaveBonus) {
+          await updateScoreBonusPoints(scoreToUpdate.id, shouldHaveBonus);
+        }
+      }
       
       toast.success("Score submitted successfully!", {
         description: `You earned ${calculatedScore.totalPoints} points for this round.`,
@@ -245,6 +284,7 @@ export default function EnterScoreForm({ onReturn }: { onReturn: () => void }) {
         onReturn();
       }, 2000);
     } catch (error) {
+      console.error("Error submitting score:", error);
       toast.error("Error submitting score", {
         description: "Please try again.",
       });

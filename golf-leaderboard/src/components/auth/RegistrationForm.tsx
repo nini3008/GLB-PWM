@@ -1,9 +1,9 @@
-// src/components/auth/RegisterForm.tsx
 'use client'
 
 import React, { useState } from 'react';
 import { useAuth } from '@/context/AuthContext';
 import { User } from 'lucide-react';
+import { toast } from 'sonner';
 
 interface RegisterFormProps {
   onLoginClick: () => void;
@@ -35,8 +35,10 @@ export default function RegisterForm({ onLoginClick }: RegisterFormProps) {
       if (error) {
         setError(error.message);
       } else {
-        // Show success message or redirect
-        alert('Registration successful! Please check your email to confirm your account.');
+        // Show success toast instead of alert
+        toast.message("Registration successful!",{
+          description: "Please check your email to confirm your account."
+        });
         onLoginClick(); // Go back to login
       }
     } catch (err) {

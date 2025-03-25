@@ -170,6 +170,45 @@ export async function updateScore(
   return data;
 }
 
+
+/**
+ * Update bonus points for a specific score
+ * Used when recalculating scores after a new submission
+ */
+export async function updateScoreBonusPoints(scoreId: string, bonusPoints: number) {
+    // First, get the current score to calculate the total points
+    const { data: scoreData, error: fetchError } = await supabase
+      .from('scores')
+      .select('points')
+      .eq('id', scoreId)
+      .single();
+    
+    if (fetchError) {
+      console.error('Error fetching score points:', fetchError);
+      throw fetchError;
+    }
+    
+    // Calculate total points manually (base points + bonus points)
+    const totalPoints = scoreData.points + bonusPoints;
+    
+    // Update the score with new bonus points and total points
+    const { error } = await supabase
+      .from('scores')
+      .update({ 
+        bonus_points: bonusPoints,
+        // Calculate total points as the sum of base points and bonus points
+        total_points: totalPoints
+      })
+      .eq('id', scoreId);
+    
+    if (error) {
+      console.error('Error updating bonus points:', error);
+      throw error;
+    }
+    
+    return true;
+  }
+
 // Get user's recent scores (limited to last 10)
 export async function getUserRecentScores(userId: string, limit: number = 10) {
   const { data, error } = await supabase
