@@ -2,7 +2,7 @@
 
 import React, { useState } from 'react';
 import { useAuth } from '@/context/AuthContext';
-import { User } from 'lucide-react';
+import { User, CheckCircle } from 'lucide-react';
 import { toast } from 'sonner';
 
 interface RegisterFormProps {
@@ -16,6 +16,7 @@ export default function RegisterForm({ onLoginClick }: RegisterFormProps) {
   const [username, setUsername] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [registrationSuccess, setRegistrationSuccess] = useState(false);
   
   const { signUp } = useAuth();
 
@@ -35,11 +36,10 @@ export default function RegisterForm({ onLoginClick }: RegisterFormProps) {
       if (error) {
         setError(error.message);
       } else {
-        // Show success toast instead of alert
-        toast.message("Registration successful!",{
-          description: "Please check your email to confirm your account."
-        });
-        onLoginClick(); // Go back to login
+        // Show success toast
+        toast.success("Registration successful!");
+        // Set success state
+        setRegistrationSuccess(true);
       }
     } catch (err) {
       setError('An unexpected error occurred');
@@ -48,6 +48,25 @@ export default function RegisterForm({ onLoginClick }: RegisterFormProps) {
       setIsLoading(false);
     }
   };
+
+  if (registrationSuccess) {
+    return (
+      <div className="max-w-md mx-auto bg-white p-8 rounded-lg shadow-md text-center">
+        <CheckCircle className="w-16 h-16 text-green-500 mx-auto mb-4" />
+        <h2 className="text-2xl font-bold mb-4 text-green-700">Registration Successful!</h2>
+        <p className="text-gray-600 mb-6">
+          Thank you for registering! Please check your email to confirm your account.
+        </p>
+        <p className="text-gray-500 text-sm mb-2">You can now proceed to login.</p>
+        <button
+          onClick={onLoginClick}
+          className="w-full bg-green-600 hover:bg-green-700 text-white py-2 rounded font-bold transition duration-200"
+        >
+          Back to Login
+        </button>
+      </div>
+    );
+  }
 
   return (
     <div className="max-w-md mx-auto bg-white p-8 rounded-lg shadow-md">

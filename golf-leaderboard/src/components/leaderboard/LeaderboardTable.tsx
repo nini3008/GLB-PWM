@@ -232,9 +232,9 @@ export function LeaderboardTable({ seasonId, onReturn }: LeaderboardProps) {
           <span className="text-lg font-bold">{player.total_points}</span>
         </div>
         <div className="flex justify-between mt-3 text-sm text-gray-500">
-          <span className="flex items-center gap-1">
-            <Users className="h-3 w-3" /> {player.games_played} games
-          </span>
+        <span className="flex items-center gap-1">
+            <Users className="h-3 w-3" /> {player.games_played} {player.games_played === 1 ? 'game' : 'games'}
+        </span>
           <span>Avg: {player.avg_score.toFixed(1)}</span>
         </div>
       </div>

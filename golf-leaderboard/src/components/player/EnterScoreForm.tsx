@@ -258,16 +258,23 @@ const handleSubmitConfirmed = async () => {
       
       // Calculate which players should have bonus points
       const bonusUpdates = updateBonusPoints(scoresForBonusUpdate);
+    
       
       // Update bonus points in the database for all players if needed
       for (const update of bonusUpdates) {
         const shouldHaveBonus = update.shouldHaveBonus ? 1 : 0;
         const scoreToUpdate = allScores.find(score => score.player_id === update.playerId);
         
-        // If the bonus point status needs to change, update it
+        
         if (scoreToUpdate && scoreToUpdate.bonus_points !== shouldHaveBonus) {
-          await updateScoreBonusPoints(scoreToUpdate.id, shouldHaveBonus);
-        }
+            try {
+              await updateScoreBonusPoints(scoreToUpdate.id, shouldHaveBonus);
+            } catch (error) {
+              console.error(`Failed to update bonus points for score ${scoreToUpdate.id}:`, error);
+            }
+          } else {
+            console.log(`No update needed for player ${update.playerId} (current=${scoreToUpdate?.bonus_points}, should=${shouldHaveBonus})`);
+          }
       }
       
       toast.success("Score submitted successfully!", {
@@ -293,7 +300,7 @@ const handleSubmitConfirmed = async () => {
     } finally {
       setIsSubmitting(false);
     }
-  };
+};
 
   // Reset code and go back to code input
   const handleResetCode = () => {
@@ -500,7 +507,7 @@ const handleSubmitConfirmed = async () => {
 
       {/* Confirmation Dialog */}
       <Dialog open={showConfirmation} onOpenChange={setShowConfirmation}>
-        <DialogContent className="sm:max-w-md border-0 shadow-xl">
+        <DialogContent className="max-w-[85vw] w-full max-h-[90vh] overflow-y-auto sm:max-w-md border-0 shadow-xl">
           <DialogHeader className="bg-gradient-to-r from-green-600 to-emerald-500 -mx-6 -mt-6 px-6 py-4 rounded-t-lg">
             <DialogTitle className="text-white text-xl font-bold flex items-center gap-2">
               <Medal className="h-6 w-6" />
@@ -512,18 +519,18 @@ const handleSubmitConfirmed = async () => {
           </DialogHeader>
           
           {calculatedScore && gameDetails && (
-            <div className="py-4">
-              <div className="flex flex-col sm:flex-row gap-4 mb-6">
-                <div className="flex-1 text-center p-5 bg-gray-50 rounded-lg shadow-sm">
-                  <p className="text-sm text-gray-500 mb-1">Your Score</p>
-                  <p className="text-3xl font-bold text-gray-800">{calculatedScore.rawScore}</p>
-                  <div className="mt-1 text-sm text-gray-500">
+            <div className="py-3 sm:py-4">
+              <div className="flex flex-col sm:flex-row gap-3 sm:gap-4 mb-4 sm:mb-6">
+                <div className="flex-1 text-center p-3 sm:p-5 bg-gray-50 rounded-lg shadow-sm">
+                <p className="text-xs sm:text-sm text-gray-500 mb-1">Your Score</p>
+                  <p className="text-2xl sm:text-3xl font-bold text-gray-800">{calculatedScore.rawScore}</p>
+                  <div className="mt-1 text-xs sm:text-sm text-gray-500">
                     {calculatedScore.overPar > 0 ? `+${calculatedScore.overPar}` : calculatedScore.overPar} to par
                   </div>
                 </div>
-                <div className="flex-1 text-center p-5 bg-green-50 rounded-lg shadow-sm border border-green-100">
-                  <p className="text-sm text-green-700 mb-1">Total Points</p>
-                  <p className="text-3xl font-bold text-green-800">{calculatedScore.totalPoints}</p>
+                <div className="flex-1 text-center p-3 sm:p-5 bg-green-50 rounded-lg shadow-sm border border-green-100">
+                  <p className="text-xs sm:text-sm text-green-700 mb-1">Total Points</p>
+                  <p className="text-2xl sm:text-3xl font-bold text-green-800">{calculatedScore.totalPoints}</p>
                   <div className="mt-1 flex justify-center items-center gap-1">
                     <span className="inline-block px-2 py-0.5 bg-green-200 text-green-800 text-xs font-medium rounded">
                       Base: {calculatedScore.points}
@@ -537,39 +544,39 @@ const handleSubmitConfirmed = async () => {
                 </div>
               </div>
               
-              <div className="space-y-3 mb-6">
-                <div className="bg-white p-4 rounded-lg border border-gray-200">
-                  <div className="flex justify-between items-center text-sm">
+              <div className="space-y-2 sm:space-y-3 mb-4 sm:mb-6">
+                <div className="bg-white p-3 sm:p-4 rounded-lg border border-gray-200">
+                  <div className="flex justify-between items-center text-xs sm:text-sm">
                     <span className="text-gray-600">Course</span>
                     <span className="font-medium">{gameDetails.courses.name}</span>
                   </div>
-                  <Separator className="my-2" />
-                  <div className="flex justify-between items-center text-sm">
+                  <Separator className="my-1.5 sm:my-2" />
+                  <div className="flex justify-between items-center text-xs sm:text-sm">
                     <span className="text-gray-600">Par</span>
                     <span className="font-medium">{gameDetails.courses.par}</span>
                   </div>
-                  <Separator className="my-2" />
-                  <div className="flex justify-between items-center text-sm">
+                  <Separator className="my-1.5 sm:my-2" />
+                  <div className="flex justify-between items-center text-xs sm:text-sm">
                     <span className="text-gray-600">Event</span>
                     <span className="font-medium">{gameDetails.name}</span>
                   </div>
                 </div>
               </div>
               
-              <div className="flex items-start gap-2 text-sm text-amber-700 bg-amber-50 p-3 rounded-lg">
-                <AlertCircle className="h-5 w-5 text-amber-500 flex-shrink-0 mt-0.5" />
+              <div className="flex items-start gap-2 text-xs sm:text-sm text-amber-700 bg-amber-50 p-2 sm:p-3 rounded-lg">
+                <AlertCircle className="h-4 w-4 sm:h-5 sm:w-5 text-amber-500 flex-shrink-0 mt-0.5" />
                 <p>Once submitted, this score cannot be modified by you. Only administrators can make changes to submitted scores.</p>
               </div>
             </div>
           )}
           
-          <DialogFooter className="flex-col sm:flex-row gap-3">
+          <DialogFooter className="flex-col sm:flex-row gap-2 sm:gap-3 mt-2 sm:mt-0">
             <Button
               type="button"
               variant="outline"
               onClick={() => setShowConfirmation(false)}
               disabled={isSubmitting}
-              className="w-full sm:w-auto order-2 sm:order-1"
+              className="w-full sm:w-auto text-sm order-2 sm:order-1 py-1.5 px-3 sm:py-2 sm:px-4"
             >
               Go Back & Edit
             </Button>
@@ -577,16 +584,16 @@ const handleSubmitConfirmed = async () => {
               type="button"
               onClick={handleSubmitConfirmed}
               disabled={isSubmitting}
-              className="w-full sm:w-auto bg-green-600 hover:bg-green-700 order-1 sm:order-2"
+              className="w-full sm:w-auto bg-green-600 hover:bg-green-700 text-sm order-1 sm:order-2 py-1.5 px-3 sm:py-2 sm:px-4"
             >
               {isSubmitting ? (
-                <div className="flex items-center gap-2">
-                  <Loader2 className="h-4 w-4 animate-spin" />
+                <div className="flex items-center gap-1 sm:gap-2">
+                  <Loader2 className="h-3 w-3 sm:h-4 sm:w-4 animate-spin" />
                   Submitting...
                 </div>
               ) : (
-                <div className="flex items-center gap-2">
-                  <Check className="h-4 w-4" />
+                <div className="flex items-center gap-1 sm:gap-2">
+                  <Check className="h-3 w-3 sm:h-4 sm:w-4" />
                   Confirm & Submit Score
                 </div>
               )}

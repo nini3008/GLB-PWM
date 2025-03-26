@@ -84,13 +84,13 @@ export function calculateFullScore(
   }
   
   /**
-   * Update bonus points for all scores in a round
-   * This should be called after adding or updating a score
-   * 
-   * @param allScoresInRound Array of all score objects for the round
-   * @returns Array of player IDs that need bonus point updates
-   */
-  export function updateBonusPoints(allScoresInRound: { 
+ * Update bonus points for all scores in a round
+ * This should be called after adding or updating a score
+ * 
+ * @param allScoresInRound Array of all score objects for the round
+ * @returns Array of player IDs that need bonus point updates
+ */
+export function updateBonusPoints(allScoresInRound: { 
     playerId: string; 
     rawScore: number;
     bonusPoints: number;
@@ -104,11 +104,20 @@ export function calculateFullScore(
     // Find the lowest score in the round
     const lowestScore = Math.min(...allScoresInRound.map(score => score.rawScore));
     
+    console.log("Lowest score in round:", lowestScore);
+    
     // Determine which players should have bonus points
-    return allScoresInRound.map(score => ({
-      playerId: score.playerId,
-      shouldHaveBonus: score.rawScore === lowestScore
-    }));
+    const updates = allScoresInRound.map(score => {
+      const shouldHaveBonus = score.rawScore === lowestScore; // STRICT EQUALITY
+      console.log(`Player ${score.playerId}: score=${score.rawScore}, lowest=${lowestScore}, shouldHaveBonus=${shouldHaveBonus}`);
+      return {
+        playerId: score.playerId,
+        shouldHaveBonus
+      };
+    });
+    
+    console.log("Final bonus updates:", updates);
+    return updates;
   }
   /**
    * Get the most recent 10 rounds for display

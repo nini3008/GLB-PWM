@@ -21,6 +21,7 @@ const ManageScoresView = React.lazy(() => import('./admin/ManageScoresView'));
 const ManageGamesView = React.lazy(() => import('./admin/ManageGamesView'));
 const ResetPasswordPage = React.lazy(() => import('./auth/ResetPasswordPage'));
 const ForgotPasswordForm = React.lazy(() => import('./auth/ForgotPassword'));
+const BonusPointRecalculation = React.lazy(() => import('./admin/BonusPointRecalculation'))
 
 
 // Loading component with shimmer effect
@@ -196,6 +197,12 @@ export function GolfLeaderboardApp() {
             <ManageScoresView onReturn={() => navigateTo('dashboard')} />
           </ComponentLoader>
         );
+      case 'bonusRecalculate':
+          return (
+            <ComponentLoader>
+              <BonusPointRecalculation onReturn={() => navigateTo('dashboard')} />
+            </ComponentLoader>
+      );
       case 'viewCodes':
         return (
           <ComponentLoader>

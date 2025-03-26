@@ -1,7 +1,7 @@
 'use client'
 // src/components/dashboard/DashboardView.tsx
 import React from 'react';
-import { Award, PlusCircle, Calendar, Flag, User, Users, ListIcon } from 'lucide-react';
+import { Award, PlusCircle, Calendar, Flag, User, Users, ListIcon, Medal } from 'lucide-react';
 import DashboardCard from './DashboardCard';
 
 interface DashboardViewProps {
@@ -62,12 +62,21 @@ export default function DashboardView({ isAdmin, onNavigate }: DashboardViewProp
               onClick={() => onNavigate('manageScores')}
               isAdmin={true}
             />
-             <DashboardCard 
-                title="View Round Codes" 
-                icon={<ListIcon />} 
-                description="See all game round codes"
-                onClick={() => onNavigate('viewCodes')}
-                isAdmin={true}
+            
+            <DashboardCard 
+              title="View Round Codes" 
+              icon={<ListIcon />} 
+              description="See all game round codes"
+              onClick={() => onNavigate('viewCodes')}
+              isAdmin={true}
+            />
+            
+            <DashboardCard 
+              title="Fix Bonus Points" 
+              icon={<Medal />} 
+              description="Recalculate bonus points for rounds"
+              onClick={() => onNavigate('bonusRecalculate')}
+              isAdmin={true}
             />
           </>
         )}

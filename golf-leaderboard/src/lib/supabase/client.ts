@@ -1,6 +1,7 @@
 // src/lib/supabase/client.ts
 import { createClient } from '@supabase/supabase-js';
 import { Database } from './types';
+import { updateBonusPoints } from '../utils/scoring';
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL as string;
 const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY as string;
@@ -29,6 +30,35 @@ export async function isUserAdmin(userId: string): Promise<boolean> {
   
   if (error) throw error;
   return data?.is_admin || false;
+}
+
+// Get all seasons that a user has joined
+export async function getUserSeasons(userId: string) {
+  const { data, error } = await supabase
+    .from('season_participants')
+    .select(`
+      id,
+      seasons:season_id (
+        id,
+        name,
+        code,
+        start_date,
+        end_date
+      )
+    `)
+    .eq('player_id', userId);
+  
+  if (error) throw error;
+  
+  // Transform the data to make it easier to work with
+  return data.map(participant => ({
+    id: participant.seasons.id,
+    name: participant.seasons.name,
+    code: participant.seasons.code,
+    startDate: participant.seasons.start_date,
+    endDate: participant.seasons.end_date,
+    participantId: participant.id
+  }));
 }
 
 // Create a new game/round
@@ -96,9 +126,6 @@ export async function submitScore(scoreData: {
     .select('*')
     .eq('id', scoreData.game_id)
     .single();
-  
-  console.log("Game data for debugging:", debugData);
-  console.log("Columns available:", debugData ? Object.keys(debugData) : "No data");
   
   if (debugData && debugData.status === 'completed') {
     throw new Error('This round is completed. No new scores can be submitted.');
@@ -175,38 +202,87 @@ export async function updateScore(
  * Update bonus points for a specific score
  * Used when recalculating scores after a new submission
  */
+/**
+ * Update bonus points for a specific score
+ */
 export async function updateScoreBonusPoints(scoreId: string, bonusPoints: number) {
-    // First, get the current score to calculate the total points
-    const { data: scoreData, error: fetchError } = await supabase
-      .from('scores')
-      .select('points')
-      .eq('id', scoreId)
-      .single();
-    
-    if (fetchError) {
-      console.error('Error fetching score points:', fetchError);
-      throw fetchError;
-    }
-    
-    // Calculate total points manually (base points + bonus points)
-    const totalPoints = scoreData.points + bonusPoints;
-    
     // Update the score with new bonus points and total points
-    const { error } = await supabase
+    const { data, error } = await supabase
       .from('scores')
       .update({ 
-        bonus_points: bonusPoints,
-        // Calculate total points as the sum of base points and bonus points
-        total_points: totalPoints
+        bonus_points: bonusPoints
       })
-      .eq('id', scoreId);
+      .eq('id', scoreId)
+      .select();
     
     if (error) {
-      console.error('Error updating bonus points:', error);
+      throw error;
+    }
+    return true;
+}
+
+
+/**
+ * Admin function to recalculate bonus points for a specific game/round
+ * This ensures only the player(s) with the lowest score get bonus points
+ * 
+ * @param gameId ID of the game/round to recalculate
+ * @returns Object with success status and message
+ */
+export async function recalculateBonusPoints(gameId: string) {
+    // Get all scores for the game
+    const { data: scores, error } = await supabase
+      .from('scores')
+      .select('id, player_id, raw_score, bonus_points, points')
+      .eq('game_id', gameId);
+    
+    if (error) {
       throw error;
     }
     
-    return true;
+    // Format for the updateBonusPoints function
+    const scoresForUpdate = scores.map(score => ({
+      playerId: score.player_id,
+      rawScore: score.raw_score,
+      bonusPoints: score.bonus_points
+    }));
+    
+    // Calculate who should have bonus points
+    const bonusUpdates = updateBonusPoints(scoresForUpdate);
+    
+    // Track which scores were updated
+    const updatedScores = [];
+    const failedUpdates = [];
+    
+    // Update each score as needed
+    for (const update of bonusUpdates) {
+      const shouldHaveBonus = update.shouldHaveBonus ? 1 : 0;
+      const scoreToUpdate = scores.find(score => score.player_id === update.playerId);
+      
+      if (scoreToUpdate && scoreToUpdate.bonus_points !== shouldHaveBonus) {
+        try {
+          await updateScoreBonusPoints(scoreToUpdate.id, shouldHaveBonus);
+          updatedScores.push({
+            id: scoreToUpdate.id,
+            rawScore: scoreToUpdate.raw_score,
+            oldBonus: scoreToUpdate.bonus_points,
+            newBonus: shouldHaveBonus
+          });
+        } catch (error: any) {
+          failedUpdates.push({
+            id: scoreToUpdate.id,
+            error: error.message
+          });
+        }
+      }
+    }
+    
+    return {
+      success: failedUpdates.length === 0,
+      updatedScores,
+      failedUpdates,
+      message: `Updated ${updatedScores.length} scores, ${failedUpdates.length} failures`
+    };
   }
 
 // Get user's recent scores (limited to last 10)
