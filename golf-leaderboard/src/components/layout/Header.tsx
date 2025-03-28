@@ -2,7 +2,7 @@
 'use client'
 
 import { useState } from 'react';
-import { Award, LogOut, Menu, X, Flag } from 'lucide-react';
+import { LogOut, Menu, X, Flag } from 'lucide-react';
 import { useAuth } from '@/context/AuthContext';
 
 interface HeaderProps {
