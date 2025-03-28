@@ -360,7 +360,7 @@ export default function CreateGameForm({ onReturn }: { onReturn: () => void }) {
                   <Input
                     id="name"
                     {...form.register('name')}
-                    placeholder="Spring Tournament 2025"
+                    placeholder="2025 Season Week 1"
                     disabled={isLoadingOptions || isSubmitting}
                     className="border-gray-300 focus:border-green-500 focus:ring focus:ring-green-200 transition-all"
                   />

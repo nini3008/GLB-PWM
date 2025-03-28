@@ -207,7 +207,7 @@ export default function ProfileForm({ onReturn }: { onReturn: () => void }) {
       </div>
 
       {/* Profile Header */}
-      <div className="bg-gradient-to-r from-green-600 to-emerald-500 rounded-xl p-6 shadow-lg mb-8">
+      <div className="bg-gradient-to-r from-green-900 to-emerald-500 rounded-xl p-6 shadow-lg mb-8">
         <div className="flex flex-col sm:flex-row items-center gap-6">
           <div className="text-center sm:text-left text-white">
             <h2 className="text-2xl sm:text-3xl font-bold">
