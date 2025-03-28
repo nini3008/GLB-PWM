@@ -2,7 +2,7 @@
 'use client'
 
 import { useState } from 'react';
-import { Award, LogOut, Menu, X } from 'lucide-react';
+import { Award, LogOut, Menu, X, Flag } from 'lucide-react';
 import { useAuth } from '@/context/AuthContext';
 
 interface HeaderProps {
@@ -17,19 +17,23 @@ export default function Header({ username, isAdmin, onLogout }: HeaderProps) {
   const [menuOpen, setMenuOpen] = useState(false);
 
   return (
-    <header className="bg-green-900 text-white shadow-md">
-      <div className="container mx-auto px-3 py-3 sm:px-4 sm:py-4">
+    <header className="bg-gradient-to-r from-green-800 to-green-700 text-white shadow-lg sticky top-0 z-10">
+      <div className="container mx-auto px-4 py-3">
         <div className="flex justify-between items-center">
-          <div className="flex items-center">
-            <Award className="mr-2 h-5 w-5 sm:h-6 sm:w-6" />
-            <h1 className="text-xl sm:text-2xl font-bold">GolfLeaderboard</h1>
+          <div className="flex items-center space-x-2">
+            <div className="bg-white rounded-full p-1.5">
+              <Flag className="h-5 w-5 text-green-700" />
+            </div>
+            <h1 className="text-xl sm:text-2xl font-bold tracking-tight">
+              Golf<span className="font-light">Leaderboard</span>
+            </h1>
           </div>
           
           {/* Mobile menu button */}
           {isLoggedIn && (
             <button 
               onClick={() => setMenuOpen(!menuOpen)}
-              className="md:hidden flex items-center"
+              className="md:hidden flex items-center p-1.5 rounded-lg hover:bg-green-600 transition-colors duration-200"
               aria-label={menuOpen ? "Close menu" : "Open menu"}
             >
               {menuOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
@@ -38,17 +42,26 @@ export default function Header({ username, isAdmin, onLogout }: HeaderProps) {
           
           {/* Desktop navigation */}
           {isLoggedIn && (
-            <div className="hidden md:flex items-center">
-              <div className="mr-4 text-sm">
-                <span>Welcome, </span>
-                <span className="font-semibold">{username}</span>
-                {isAdmin && <span className="ml-2 px-2 py-1 bg-yellow-500 text-xs rounded">Admin</span>}
+            <div className="hidden md:flex items-center space-x-4">
+              <div className="flex items-center">
+                <div className="h-8 w-8 rounded-full bg-green-600 flex items-center justify-center mr-2">
+                  {username?.charAt(0).toUpperCase() || 'U'}
+                </div>
+                <div>
+                  <span className="text-green-100 text-xs">Welcome,</span>
+                  <div className="font-medium -mt-1">{username}</div>
+                </div>
+                {isAdmin && (
+                  <span className="ml-2 px-2 py-0.5 bg-amber-500 text-amber-900 text-xs rounded-full font-medium">
+                    Admin
+                  </span>
+                )}
               </div>
               <button 
                 onClick={onLogout}
-                className="flex items-center bg-red-600 hover:bg-red-700 text-white px-3 py-1 rounded"
+                className="flex items-center bg-red-600 hover:bg-red-700 text-white px-3 py-1.5 rounded-lg transition-colors duration-200"
               >
-                <LogOut className="h-4 w-4 mr-1" />
+                <LogOut className="h-4 w-4 mr-1.5" />
                 <span>Logout</span>
               </button>
             </div>
@@ -57,15 +70,24 @@ export default function Header({ username, isAdmin, onLogout }: HeaderProps) {
         
         {/* Mobile dropdown menu */}
         {isLoggedIn && menuOpen && (
-          <div className="md:hidden pt-3 pb-2 border-t border-green-600 mt-3 flex flex-col items-start">
-            <div className="py-2 text-sm">
-              <span>Welcome, </span>
-              <span className="font-semibold">{username}</span>
-              {isAdmin && <span className="ml-2 px-2 py-1 bg-yellow-500 text-xs rounded">Admin</span>}
+          <div className="md:hidden pt-4 pb-3 border-t border-green-600 mt-3 flex flex-col items-start">
+            <div className="py-2 flex items-center">
+              <div className="h-8 w-8 rounded-full bg-green-600 flex items-center justify-center mr-2">
+                {username?.charAt(0).toUpperCase() || 'U'}
+              </div>
+              <div>
+                <span className="text-green-100 text-xs">Welcome,</span>
+                <div className="font-medium -mt-1">{username}</div>
+              </div>
+              {isAdmin && (
+                <span className="ml-2 px-2 py-0.5 bg-amber-500 text-amber-900 text-xs rounded-full font-medium">
+                  Admin
+                </span>
+              )}
             </div>
             <button 
               onClick={onLogout}
-              className="flex items-center bg-red-600 hover:bg-red-700 text-white px-3 py-2 rounded mt-2 w-full justify-center"
+              className="flex items-center bg-red-600 hover:bg-red-700 text-white px-3 py-2 rounded-lg mt-3 w-full justify-center transition-colors duration-200"
             >
               <LogOut className="h-4 w-4 mr-2" />
               <span>Logout</span>

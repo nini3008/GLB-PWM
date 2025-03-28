@@ -129,9 +129,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       const isRecentTabActivation = 
         lastTabActivationRef.current > 0 && 
         (Date.now() - lastTabActivationRef.current < 3000);
-      
-      console.log("Auth event:", event, "Recent tab activation:", isRecentTabActivation, "Time since activation:", Date.now() - lastTabActivationRef.current, "ms");
-      
+
       // Always update session and user
       setSession(session);
       setUser(session?.user || null);

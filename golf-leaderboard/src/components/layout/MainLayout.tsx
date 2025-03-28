@@ -18,14 +18,16 @@ export default function MainLayout({ children }: MainLayoutProps) {
   };
 
   return (
-    <div className="min-h-screen flex flex-col bg-green-50">
+    <div className="min-h-screen flex flex-col bg-gradient-to-br from-green-50 to-white">
       <Header 
         username={profile?.username} 
         isAdmin={isAdmin} 
         onLogout={handleLogout} 
       />
       <main className="container mx-auto px-3 sm:px-4 py-4 sm:py-8 flex-grow">
-        {children}
+        <div className="max-w-6xl mx-auto">
+          {children}
+        </div>
       </main>
       <Footer />
     </div>
