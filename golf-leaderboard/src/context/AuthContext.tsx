@@ -216,15 +216,42 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   };
 
-  // Sign out
-  const signOut = async (): Promise<{ error: AppError | null }> => {
-    try {
-      const { error } = await supabase.auth.signOut();
-      return { error };
-    } catch (err) {
-      return { error: err as AppError };
+// Sign out with improved error handling
+const signOut = async (): Promise<{ error: AppError | null }> => {
+  try {
+    // First check if we already have a session before trying to sign out
+    const { data: { session } } = await supabase.auth.getSession();
+    
+    if (!session) {
+      console.log('No active session found, user already signed out');
+      // Clear any local auth state manually to ensure consistency
+      return { error: null };
     }
-  };
+    
+    // If we have a session, try to sign out normally
+    const { error } = await supabase.auth.signOut();
+    
+    if (error) {
+      console.error('Sign out error:', error);
+      
+      // If we get a 403 Forbidden error, the token might be invalid
+      // We should still consider this a "successful" logout from the user's perspective
+      if (error.status === 403) {
+        console.log('403 error during logout - clearing local session data');
+        // Force local cleanup 
+        localStorage.removeItem('supabase.auth.token');
+        // You might need to clear other auth-related items depending on your setup
+        
+        return { error: null }; // Return success despite the 403
+      }
+    }
+    
+    return { error };
+  } catch (err) {
+    console.error('Unexpected error during sign out:', err);
+    return { error: err as AppError };
+  }
+};
 
   // Update user profile
   const updateProfile = async (updates: Partial<UserProfile>): Promise<{ error: AppError | null }> => {
