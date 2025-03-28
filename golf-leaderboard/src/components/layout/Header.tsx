@@ -17,7 +17,7 @@ export default function Header({ username, isAdmin, onLogout }: HeaderProps) {
   const [menuOpen, setMenuOpen] = useState(false);
 
   return (
-    <header className="bg-green-700 text-white shadow-md">
+    <header className="bg-green-900 text-white shadow-md">
       <div className="container mx-auto px-3 py-3 sm:px-4 sm:py-4">
         <div className="flex justify-between items-center">
           <div className="flex items-center">

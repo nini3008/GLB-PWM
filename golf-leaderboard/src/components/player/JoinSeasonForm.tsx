@@ -46,6 +46,7 @@ export default function JoinSeasonForm({ onReturn }: JoinSeasonFormProps) {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isSuccess, setIsSuccess] = useState(false);
   const [seasonError, setSeasonError] = useState<string | null>(null);
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const [userSeasons, setUserSeasons] = useState<any[]>([]);
   const [isLoadingSeasons, setIsLoadingSeasons] = useState(true);
 
@@ -120,6 +121,7 @@ export default function JoinSeasonForm({ onReturn }: JoinSeasonFormProps) {
       setTimeout(() => {
         onReturn();
       }, 3000);
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
     } catch (error: any) {
       // Set specific error messages based on the error type
       if (error.message?.includes("duplicate key")) {
@@ -161,10 +163,10 @@ export default function JoinSeasonForm({ onReturn }: JoinSeasonFormProps) {
             <Users className="h-10 w-10" />
           </div>
           <h3 className="text-2xl font-bold text-green-800 mb-2">
-            You're Already Joined
+            You&apos;re Already Joined
           </h3>
           <p className="text-gray-600 max-w-md mx-auto mb-4">
-            You're already a member of {userSeasons.length} season{userSeasons.length > 1 ? 's' : ''}:
+            You&apos;re already a member of {userSeasons.length} season{userSeasons.length > 1 ? 's' : ''}:
           </p>
           
           <div className="mb-6 flex flex-wrap justify-center gap-2">

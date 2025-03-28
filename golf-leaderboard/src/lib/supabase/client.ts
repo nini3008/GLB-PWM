@@ -207,7 +207,7 @@ export async function updateScore(
  */
 export async function updateScoreBonusPoints(scoreId: string, bonusPoints: number) {
     // Update the score with new bonus points and total points
-    const { data, error } = await supabase
+    const { error } = await supabase
       .from('scores')
       .update({ 
         bonus_points: bonusPoints
@@ -268,6 +268,7 @@ export async function recalculateBonusPoints(gameId: string) {
             oldBonus: scoreToUpdate.bonus_points,
             newBonus: shouldHaveBonus
           });
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
         } catch (error: any) {
           failedUpdates.push({
             id: scoreToUpdate.id,

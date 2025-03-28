@@ -85,6 +85,7 @@ export default function BonusPointRecalculation({ onReturn }: BonusPointRecalcul
       toast.success('Round code validated', {
         description: `Found ${currentScores.length} scores for ${game.name}`
       });
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
     } catch (error: any) {
       toast.error('Error validating round code', {
         description: error.message
@@ -119,6 +120,7 @@ export default function BonusPointRecalculation({ onReturn }: BonusPointRecalcul
           description: `${result.updatedScores.length} succeeded, ${result.failedUpdates.length} failed`
         });
       }
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
     } catch (error: any) {
       toast.error('Error recalculating bonus points', {
         description: error.message
