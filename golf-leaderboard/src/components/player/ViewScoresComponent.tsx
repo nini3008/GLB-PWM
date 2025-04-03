@@ -60,7 +60,6 @@ interface GameWithCourse {
 
 export default function ViewScoresComponent({ onReturn }: { onReturn: () => void }) {
   const { user } = useUser();
-  const [isLoading, setIsLoading] = useState(false);
   const [gameScores, setGameScores] = useState<ScoreWithPlayer[]>([]);
   const [selectedGame, setSelectedGame] = useState<GameWithCourse | null>(null);
   const [roundCode, setRoundCode] = useState('');
@@ -137,7 +136,7 @@ export default function ViewScoresComponent({ onReturn }: { onReturn: () => void
         }));
       
       setGameScores(validScores);
-      
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
     } catch (error: any) {
       if (process.env.NODE_ENV !== 'production') {
         console.error("Round code validation error:", {
