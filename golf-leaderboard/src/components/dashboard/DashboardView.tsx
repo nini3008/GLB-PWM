@@ -1,7 +1,7 @@
 'use client'
 // src/components/dashboard/DashboardView.tsx
 import React from 'react';
-import { Award, PlusCircle, Calendar, Flag, User, Users, ListIcon, Medal } from 'lucide-react';
+import { Award, PlusCircle, Calendar, Flag, User, Users, ListIcon, Medal, ClipboardList } from 'lucide-react';
 import DashboardCard from './DashboardCard';
 
 interface DashboardViewProps {
@@ -45,6 +45,13 @@ export default function DashboardView({ isAdmin, onNavigate }: DashboardViewProp
           icon={<User />} 
           description="View and edit your profile information"
           onClick={() => onNavigate('profile')}
+        />
+
+        <DashboardCard 
+          title="View Round Scores" 
+          icon={<ClipboardList />} 
+          description="Enter a round code to see all scores"
+          onClick={() => onNavigate('viewScores')}
         />
         
         {/* Admin-only options */}
