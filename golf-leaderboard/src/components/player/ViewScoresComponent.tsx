@@ -95,8 +95,12 @@ export default function ViewScoresComponent({ onReturn }: { onReturn: () => void
 
   // Handle round code validation
   const validateCode = async () => {
-    if (!roundCode || roundCode.length < 3) {
-      if (roundCode && roundCode.length > 0 && roundCode.length < 3) {
+    // Standardize the input format
+    const formattedCode = String(roundCode || '').trim().toUpperCase();
+    console.log("Validating code:", formattedCode);
+    
+    if (!formattedCode || formattedCode.length < 3) {
+      if (formattedCode && formattedCode.length > 0 && formattedCode.length < 3) {
         setCodeError("Round code must be at least 3 characters");
       }
       return;
@@ -111,8 +115,11 @@ export default function ViewScoresComponent({ onReturn }: { onReturn: () => void
     setCodeError(null);
     
     try {
+      // Ensure the round code is in the correct format before validation
+      setRoundCode(formattedCode);
+      
       // Validate the round code and get game details
-      const game = await validateRoundCode(roundCode);
+      const game = await validateRoundCode(formattedCode);
       setSelectedGame(game);
       
       // Load scores for this game
@@ -302,14 +309,22 @@ export default function ViewScoresComponent({ onReturn }: { onReturn: () => void
                   id="roundCode"
                   value={roundCode}
                   onChange={(e) => {
-                    setRoundCode(e.target.value.toUpperCase());
+                    // Normalize to uppercase in real-time as user types
+                    const value = e.target.value.toUpperCase();
+                    setRoundCode(value);
                     if (codeError) setCodeError(null);
                   }}
                   placeholder="Enter round code"
                   className={`text-center uppercase tracking-wider ${codeError ? 'border-red-500' : ''}`}
                 />
                 <Button 
-                  onClick={validateCode}
+                  onClick={() => {
+                    // Format the code before validation
+                    const formattedCode = String(roundCode || '').trim().toUpperCase();
+                    setRoundCode(formattedCode); // Update the state with formatted code
+                    console.log("Button clicked with code:", formattedCode);
+                    validateCode();
+                  }}
                   disabled={isValidatingCode || !roundCode}
                   className="w-full sm:w-auto"
                 >

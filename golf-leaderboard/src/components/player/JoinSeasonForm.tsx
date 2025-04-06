@@ -98,8 +98,10 @@ export default function JoinSeasonForm({ onReturn }: JoinSeasonFormProps) {
     setSeasonError(null);
     
     try {
-      // Normalize the season code (uppercase and trim spaces)
-      const normalizedCode = values.seasonCode.toUpperCase().trim();
+      // Get the normalized season code from the form
+      // It should already be uppercase from our onChange handler
+      const normalizedCode = String(values.seasonCode || '').trim().toUpperCase();
+      console.log("Joining season with code:", normalizedCode);
       
       // Try to join the season
       await joinSeason(normalizedCode, user.id);
@@ -242,7 +244,14 @@ export default function JoinSeasonForm({ onReturn }: JoinSeasonFormProps) {
                 <Lock className="h-5 w-5 text-gray-400" />
               </div>
               <Input
-                {...form.register('seasonCode')}
+                {...form.register('seasonCode', {
+                  onChange: (e) => {
+                    // Normalize to uppercase in real-time as user types
+                    const value = e.target.value.toUpperCase();
+                    e.target.value = value;
+                    form.setValue('seasonCode', value);
+                  }
+                })}
                 id="seasonCode"
                 className={`pl-10 text-center text-xl uppercase tracking-widest font-medium py-6 
                   ${seasonError ? 'border-red-300 focus:ring-red-300' : 'border-gray-300 focus:border-green-500 focus:ring focus:ring-green-200'} transition-all`}
@@ -278,6 +287,12 @@ export default function JoinSeasonForm({ onReturn }: JoinSeasonFormProps) {
             type="submit"
             className="w-full bg-green-600 hover:bg-green-700 py-6 text-lg font-medium transition-all"
             disabled={isSubmitting}
+            onClick={() => {
+              // Normalize the code one last time before submission
+              const currentCode = form.getValues().seasonCode;
+              const normalizedCode = String(currentCode || '').trim().toUpperCase();
+              form.setValue('seasonCode', normalizedCode);
+            }}
           >
             {isSubmitting ? (
               <div className="flex items-center justify-center gap-2">

@@ -110,8 +110,13 @@ export default function EnterScoreForm({ onReturn }: { onReturn: () => void }) {
 
   // Handle round code validation
   const validateCode = async (roundCode: string) => {
-    if (!roundCode || roundCode.length < 3) {
-      if (roundCode && roundCode.length > 0 && roundCode.length < 3) {
+    // Standardize the input format
+    const formattedCode = String(roundCode || '').trim().toUpperCase();
+    
+    console.log("Validating code:", formattedCode);
+    
+    if (!formattedCode || formattedCode.length < 3) {
+      if (formattedCode && formattedCode.length > 0 && formattedCode.length < 3) {
         setCodeError("Round code must be at least 3 characters");
       }
       return;
@@ -126,8 +131,11 @@ export default function EnterScoreForm({ onReturn }: { onReturn: () => void }) {
     setCodeError(null);
     
     try {
+      // Update the form value to ensure it's in the correct format
+      form.setValue('roundCode', formattedCode);
+      
       // Validate the round code and get game details
-      const game = await validateRoundCode(roundCode);
+      const game = await validateRoundCode(formattedCode);
       
       // Check if the user is part of this season
       const userInSeason = await isUserInSeason(game.season_id, user.id);
@@ -217,8 +225,8 @@ export default function EnterScoreForm({ onReturn }: { onReturn: () => void }) {
     }
   };
 
-// Submit score after confirmation
-const handleSubmitConfirmed = async () => {
+  // Submit score after confirmation
+  const handleSubmitConfirmed = async () => {
     if (!gameDetails || !calculatedScore || !user) return;
     
     setIsSubmitting(true);
@@ -300,7 +308,7 @@ const handleSubmitConfirmed = async () => {
     } finally {
       setIsSubmitting(false);
     }
-};
+  };
 
   // Reset code and go back to code input
   const handleResetCode = () => {
@@ -378,16 +386,26 @@ const handleSubmitConfirmed = async () => {
                     <Label htmlFor="roundCode" className="text-gray-700">Round Code</Label>
                     <div className="flex gap-2">
                       <Input
-                        {...form.register('roundCode')}
+                        {...form.register('roundCode', {
+                          onChange: (e) => {
+                            // Normalize to uppercase in real-time as user types
+                            const value = e.target.value.toUpperCase();
+                            e.target.value = value;
+                            form.setValue('roundCode', value);
+                          }
+                        })}
                         id="roundCode"
                         placeholder="Enter round code"
                         className={`text-center uppercase tracking-wider text-lg font-medium ${codeError ? 'border-red-300 focus:ring-red-300' : 'border-gray-300 focus:border-green-500 focus:ring focus:ring-green-200'} transition-all`}
-                        onBlur={(e) => validateCode(e.target.value)}
                         autoComplete="off"
                       />
                       <Button 
                         type="button" 
-                        onClick={() => validateCode(form.getValues().roundCode)}
+                        onClick={() => {
+                          const code = form.getValues().roundCode;
+                          console.log("Button clicked with code:", code);
+                          validateCode(code);
+                        }}
                         disabled={isValidatingCode}
                         className="bg-green-600 hover:bg-green-700 text-white flex-shrink-0"
                       >
@@ -473,7 +491,14 @@ const handleSubmitConfirmed = async () => {
               <div className="w-full flex justify-end">
                 <Button 
                   type="button" 
-                  onClick={() => validateCode(form.getValues().roundCode)}
+                  onClick={() => {
+                    const code = form.getValues().roundCode;
+                    console.log("Proceed button clicked with code:", code);
+                    // Make sure the code is formatted correctly before validation
+                    const formattedCode = String(code || '').trim().toUpperCase();
+                    form.setValue('roundCode', formattedCode);
+                    validateCode(formattedCode);
+                  }}
                   disabled={isValidatingCode || !form.getValues().roundCode}
                   className="bg-green-600 hover:bg-green-700"
                 >
