@@ -245,9 +245,7 @@ export function LeaderboardTable({ seasonId, onReturn }: LeaderboardProps) {
                         <span className="font-medium text-gray-900 text-xs truncate">{player.username}</span>
                       </div>
                       <div className="text-right leading-tight">
-                        <div className="font-bold text-gray-900 text-xs">{player.total_points}</div>
-                        <div className="text-xs text-gray-600">{player.games_played}g</div>
-                        <div className="text-xs text-gray-500">{player.avg_score.toFixed(1)}</div>
+                        <span className="font-bold text-gray-900 text-xs">{player.total_points}pts</span>
                       </div>
                     </div>
                   ))}
