@@ -26,9 +26,10 @@ import {
 } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
-import { Award, Trophy, Medal, ArrowLeft, Users, Info } from 'lucide-react';
+import { Award, Trophy, Medal, ArrowLeft, Users, Info, FileText, X } from 'lucide-react';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { getSeasonLeaderboard, supabase } from '@/lib/supabase/client';
+import { getSeasonLeaderboard, supabase, isUserAdmin } from '@/lib/supabase/client';
+import { useAuth } from '@/context/AuthContext';
 
 // Types for leaderboard data
 interface LeaderboardPlayer {
@@ -46,12 +47,31 @@ interface LeaderboardProps {
 }
 
 export function LeaderboardTable({ seasonId, onReturn }: LeaderboardProps) {
+  const { user } = useAuth();
   const [leaderboardData, setLeaderboardData] = useState<LeaderboardPlayer[]>([]);
   const [loading, setLoading] = useState(true);
   const [seasons, setSeasons] = useState<{ id: string; name: string }[]>([]);
   const [selectedSeason, setSelectedSeason] = useState<string | undefined>(seasonId);
   const [loadingSeasons, setLoadingSeasons] = useState(true);
   const [isMobile, setIsMobile] = useState(false);
+  const [isAdmin, setIsAdmin] = useState(false);
+  const [showReport, setShowReport] = useState(false);
+
+  // Check if current user is admin
+  useEffect(() => {
+    const checkAdminStatus = async () => {
+      if (user) {
+        try {
+          const adminStatus = await isUserAdmin(user.id);
+          setIsAdmin(adminStatus);
+        } catch (error) {
+          console.error('Error checking admin status:', error);
+        }
+      }
+    };
+
+    checkAdminStatus();
+  }, [user]);
 
   // Check viewport size on mount and window resize
   useEffect(() => {
@@ -173,6 +193,77 @@ export function LeaderboardTable({ seasonId, onReturn }: LeaderboardProps) {
       .toUpperCase();
   };
 
+  // Generate simplified report
+  const generateReport = () => {
+    const selectedSeasonName = seasons.find(s => s.id === selectedSeason)?.name || 'Unknown Season';
+    const totalPlayers = leaderboardData.length;
+    const totalGames = leaderboardData.reduce((sum, player) => sum + player.games_played, 0);
+    const avgGamesPerPlayer = totalPlayers > 0 ? (totalGames / totalPlayers).toFixed(1) : '0';
+    
+    return {
+      seasonName: selectedSeasonName,
+      totalPlayers,
+      totalGames,
+      avgGamesPerPlayer,
+      allPlayers: leaderboardData,
+      reportDate: new Date().toLocaleDateString()
+    };
+  };
+
+  // Render simplified report modal
+  const renderReport = () => {
+    if (!showReport) return null;
+
+    const report = generateReport();
+
+    return (
+      <div className="fixed inset-0 bg-white z-50 overflow-y-auto">
+        <div className="min-h-screen w-full">
+          <div className="p-4 max-w-7xl mx-auto">
+            <div className="flex justify-between items-center mb-4">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setShowReport(false)}
+                className="print:hidden"
+              >
+                <X className="mr-2 h-4 w-4" />
+                Close Report
+              </Button>
+            </div>
+            
+            <div className="space-y-4">
+              <div>
+                <h6 className="text-sm font-semibold text-gray-700 mb-3">Complete Rankings</h6>
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-1">
+                  {report.allPlayers.map((player, index) => (
+                    <div key={player.player_id} className={`flex items-center justify-between p-1.5 rounded border ${index < 3 ? 'bg-yellow-50 border-yellow-200' : 'bg-white border-gray-200'}`}>
+                      <div className="flex items-center gap-2">
+                        <span className={`w-5 h-5 rounded-full flex items-center justify-center text-xs font-bold ${index < 3 ? 'bg-yellow-500 text-white' : 'bg-gray-100 text-gray-700'}`}>
+                          {index + 1}
+                        </span>
+                        <span className="font-medium text-gray-900 text-xs truncate">{player.username}</span>
+                      </div>
+                      <div className="text-right leading-tight">
+                        <div className="font-bold text-gray-900 text-xs">{player.total_points}</div>
+                        <div className="text-xs text-gray-600">{player.games_played}g</div>
+                        <div className="text-xs text-gray-500">{player.avg_score.toFixed(1)}</div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              <div className="pt-3 border-t text-center text-gray-500">
+                <p className="text-sm">Report generated on {report.reportDate}</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  };
+
   // Mobile card view for leaderboard
   const renderMobileLeaderboard = () => {
     if (loading) {
@@ -242,149 +333,167 @@ export function LeaderboardTable({ seasonId, onReturn }: LeaderboardProps) {
   };
 
   return (
-    <Card className="w-full shadow-sm">
-      <CardHeader className="flex flex-col sm:flex-row sm:items-center sm:justify-between space-y-3 sm:space-y-0">
-        <div>
-          <CardTitle className="text-xl sm:text-2xl flex items-center gap-2">
-            <Award className="h-5 w-5 sm:h-6 sm:w-6 text-yellow-500" />
-            Leaderboard
-          </CardTitle>
-          <CardDescription className="text-sm sm:text-base">
-            See who&apos;s leading the competition
-          </CardDescription>
-        </div>
-        <Button 
-          variant="outline" 
-          size="sm" 
-          onClick={onReturn}
-          className="self-start sm:self-center"
-        >
-          <ArrowLeft className="mr-2 h-4 w-4" />
-          Back
-        </Button>
-      </CardHeader>
-      
-      <CardContent className="px-3 sm:px-6">
-        {/* Season selector */}
-        <div className="mb-6">
-          <Select
-            value={selectedSeason}
-            onValueChange={(value) => setSelectedSeason(value)}
-            disabled={loadingSeasons}
-          >
-            <SelectTrigger className="w-full">
-              <SelectValue placeholder={loadingSeasons ? "Loading seasons..." : "Select a season"} />
-            </SelectTrigger>
-            <SelectContent>
-              {seasons.length === 0 ? (
-                <SelectItem value="none" disabled>No seasons available</SelectItem>
-              ) : (
-                seasons.map((season) => (
-                  <SelectItem key={season.id} value={season.id}>
-                    {season.name}
-                  </SelectItem>
-                ))
-              )}
-            </SelectContent>
-          </Select>
-        </div>
-        
-        {/* Mobile view */}
-        {isMobile ? (
-          <div className="space-y-1">
-            {renderMobileLeaderboard()}
+    <>
+      <Card className="w-full shadow-sm">
+        <CardHeader className="flex flex-col sm:flex-row sm:items-center sm:justify-between space-y-3 sm:space-y-0">
+          <div>
+            <CardTitle className="text-xl sm:text-2xl flex items-center gap-2">
+              <Award className="h-5 w-5 sm:h-6 sm:w-6 text-yellow-500" />
+              Leaderboard
+            </CardTitle>
+            <CardDescription className="text-sm sm:text-base">
+              See who&apos;s leading the competition
+            </CardDescription>
           </div>
-        ) : (
-          /* Desktop table view */
-          <div className="rounded-md border overflow-hidden">
-            <Table>
-              <TableHeader>
-                <TableRow className="bg-gray-50">
-                  <TableHead className="w-16">Rank</TableHead>
-                  <TableHead>Player</TableHead>
-                  <TableHead className="text-right">Points</TableHead>
-                  <TableHead className="text-right">Games</TableHead>
-                  <TableHead className="text-right">Avg. Score</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {loading ? (
-                  // Loading skeletons
-                  Array(5).fill(0).map((_, i) => (
-                    <TableRow key={i}>
-                      <TableCell><Skeleton className="h-8 w-8 rounded-full" /></TableCell>
-                      <TableCell>
-                        <div className="flex items-center gap-2">
-                          <Skeleton className="h-10 w-10 rounded-full" />
-                          <Skeleton className="h-4 w-32" />
-                        </div>
-                      </TableCell>
-                      <TableCell className="text-right"><Skeleton className="h-4 w-12 ml-auto" /></TableCell>
-                      <TableCell className="text-right"><Skeleton className="h-4 w-8 ml-auto" /></TableCell>
-                      <TableCell className="text-right"><Skeleton className="h-4 w-16 ml-auto" /></TableCell>
-                    </TableRow>
-                  ))
-                ) : leaderboardData.length === 0 ? (
-                  <TableRow>
-                    <TableCell colSpan={5} className="h-24 text-center">
-                      No data available for this season
-                    </TableCell>
-                  </TableRow>
+          <div className="flex gap-2">
+            {isAdmin && (
+              <Button 
+                variant="outline" 
+                size="sm" 
+                onClick={() => setShowReport(true)}
+                className="self-start sm:self-center"
+              >
+                <FileText className="mr-2 h-4 w-4" />
+                Report
+              </Button>
+            )}
+            <Button 
+              variant="outline" 
+              size="sm" 
+              onClick={onReturn}
+              className="self-start sm:self-center"
+            >
+              <ArrowLeft className="mr-2 h-4 w-4" />
+              Back
+            </Button>
+          </div>
+        </CardHeader>
+        
+        <CardContent className="px-3 sm:px-6">
+          {/* Season selector */}
+          <div className="mb-6">
+            <Select
+              value={selectedSeason}
+              onValueChange={(value) => setSelectedSeason(value)}
+              disabled={loadingSeasons}
+            >
+              <SelectTrigger className="w-full">
+                <SelectValue placeholder={loadingSeasons ? "Loading seasons..." : "Select a season"} />
+              </SelectTrigger>
+              <SelectContent>
+                {seasons.length === 0 ? (
+                  <SelectItem value="none" disabled>No seasons available</SelectItem>
                 ) : (
-                  leaderboardData.map((player, index) => (
-                    <TableRow 
-                      key={player.player_id}
-                      className={index < 3 ? "bg-green-50" : undefined}
-                    >
-                      <TableCell>{getRankDisplay(index + 1)}</TableCell>
-                      <TableCell>
-                        <div className="flex items-center gap-3">
-                          <Avatar>
-                            <AvatarImage 
-                              src={player.profile_image_url || undefined} 
-                              alt={player.username} 
-                            />
-                            <AvatarFallback className="bg-green-100 text-green-700">
-                              {getInitials(player.username)}
-                            </AvatarFallback>
-                          </Avatar>
-                          <div>
-                            <p className="font-medium">{player.username}</p>
-                            {index === 0 && (
-                              <Badge variant="outline" className="bg-yellow-50 text-yellow-700 border-yellow-200">
-                                Leader
-                              </Badge>
-                            )}
-                          </div>
-                        </div>
-                      </TableCell>
-                      <TableCell className="text-right font-semibold">
-                        {player.total_points}
-                      </TableCell>
-                      <TableCell className="text-right">
-                        {player.games_played}
-                      </TableCell>
-                      <TableCell className="text-right font-medium">
-                        {player.avg_score.toFixed(1)}
-                      </TableCell>
-                    </TableRow>
+                  seasons.map((season) => (
+                    <SelectItem key={season.id} value={season.id}>
+                      {season.name}
+                    </SelectItem>
                   ))
                 )}
-              </TableBody>
-            </Table>
+              </SelectContent>
+            </Select>
           </div>
-        )}
-        
-        {!loading && leaderboardData.length > 0 && (
-          <div className="flex items-center justify-center mt-4 text-xs text-gray-500 px-2">
-            <Info className="h-3 w-3 mr-1 flex-shrink-0" />
-            <p className="text-center">
-              Points are calculated based on your scores relative to par. 
-              The lower your score, the more points you earn.
-            </p>
-          </div>
-        )}
-      </CardContent>
-    </Card>
+          
+          {/* Mobile view */}
+          {isMobile ? (
+            <div className="space-y-1">
+              {renderMobileLeaderboard()}
+            </div>
+          ) : (
+            /* Desktop table view */
+            <div className="rounded-md border overflow-hidden">
+              <Table>
+                <TableHeader>
+                  <TableRow className="bg-gray-50">
+                    <TableHead className="w-16">Rank</TableHead>
+                    <TableHead>Player</TableHead>
+                    <TableHead className="text-right">Points</TableHead>
+                    <TableHead className="text-right">Games</TableHead>
+                    <TableHead className="text-right">Avg. Score</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {loading ? (
+                    // Loading skeletons
+                    Array(5).fill(0).map((_, i) => (
+                      <TableRow key={i}>
+                        <TableCell><Skeleton className="h-8 w-8 rounded-full" /></TableCell>
+                        <TableCell>
+                          <div className="flex items-center gap-2">
+                            <Skeleton className="h-10 w-10 rounded-full" />
+                            <Skeleton className="h-4 w-32" />
+                          </div>
+                        </TableCell>
+                        <TableCell className="text-right"><Skeleton className="h-4 w-12 ml-auto" /></TableCell>
+                        <TableCell className="text-right"><Skeleton className="h-4 w-8 ml-auto" /></TableCell>
+                        <TableCell className="text-right"><Skeleton className="h-4 w-16 ml-auto" /></TableCell>
+                      </TableRow>
+                    ))
+                  ) : leaderboardData.length === 0 ? (
+                    <TableRow>
+                      <TableCell colSpan={5} className="h-24 text-center">
+                        No data available for this season
+                      </TableCell>
+                    </TableRow>
+                  ) : (
+                    leaderboardData.map((player, index) => (
+                      <TableRow 
+                        key={player.player_id}
+                        className={index < 3 ? "bg-green-50" : undefined}
+                      >
+                        <TableCell>{getRankDisplay(index + 1)}</TableCell>
+                        <TableCell>
+                          <div className="flex items-center gap-3">
+                            <Avatar>
+                              <AvatarImage 
+                                src={player.profile_image_url || undefined} 
+                                alt={player.username} 
+                              />
+                              <AvatarFallback className="bg-green-100 text-green-700">
+                                {getInitials(player.username)}
+                              </AvatarFallback>
+                            </Avatar>
+                            <div>
+                              <p className="font-medium">{player.username}</p>
+                              {index === 0 && (
+                                <Badge variant="outline" className="bg-yellow-50 text-yellow-700 border-yellow-200">
+                                  Leader
+                                </Badge>
+                              )}
+                            </div>
+                          </div>
+                        </TableCell>
+                        <TableCell className="text-right font-semibold">
+                          {player.total_points}
+                        </TableCell>
+                        <TableCell className="text-right">
+                          {player.games_played}
+                        </TableCell>
+                        <TableCell className="text-right font-medium">
+                          {player.avg_score.toFixed(1)}
+                        </TableCell>
+                      </TableRow>
+                    ))
+                  )}
+                </TableBody>
+              </Table>
+            </div>
+          )}
+          
+          {!loading && leaderboardData.length > 0 && (
+            <div className="flex items-center justify-center mt-4 text-xs text-gray-500 px-2">
+              <Info className="h-3 w-3 mr-1 flex-shrink-0" />
+              <p className="text-center">
+                Points are calculated based on your scores relative to par. 
+                The lower your score, the more points you earn.
+              </p>
+            </div>
+          )}
+        </CardContent>
+      </Card>
+      
+      {/* Report Modal */}
+      {renderReport()}
+    </>
   );
 }

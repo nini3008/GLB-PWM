@@ -24,8 +24,7 @@ const ForgotPasswordForm = React.lazy(() => import('./auth/ForgotPassword'));
 const BonusPointRecalculation = React.lazy(() => import('./admin/BonusPointRecalculation'));
 const ViewScoresComponent = React.lazy(() => import('./player/ViewScoresComponent'));
 
-
-// Loading component with shimmer effect
+// Simple loading component
 const LoadingView = ({ message = "Loading..." }) => (
   <div className="min-h-screen bg-gradient-to-b from-green-50 to-white flex flex-col items-center justify-center p-4">
     <Card className="w-full max-w-md overflow-hidden">
@@ -59,8 +58,39 @@ export function GolfLeaderboardApp() {
   const { user, isAdmin, isLoading } = useAuth();
   const [currentView, setCurrentView] = useState('dashboard');
   const [isTransitioning, setIsTransitioning] = useState(false);
+  
   // Ref to track auth state changes vs manual navigation
   const authChangeRef = useRef(false);
+  const loadingTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+
+  // Set up loading timeout - just do a hard reload
+  useEffect(() => {
+    if (isLoading) {
+      // Clear any existing timeout
+      if (loadingTimeoutRef.current) {
+        clearTimeout(loadingTimeoutRef.current);
+      }
+      
+      // Set a timeout for 3 seconds, then hard reload
+      loadingTimeoutRef.current = setTimeout(() => {
+        console.warn('Auth loading timeout reached, doing hard reload');
+        window.location.reload();
+      }, 3000);
+    } else {
+      // Clear timeout if loading completes
+      if (loadingTimeoutRef.current) {
+        clearTimeout(loadingTimeoutRef.current);
+        loadingTimeoutRef.current = null;
+      }
+    }
+
+    // Cleanup on unmount
+    return () => {
+      if (loadingTimeoutRef.current) {
+        clearTimeout(loadingTimeoutRef.current);
+      }
+    };
+  }, [isLoading]);
 
   // Check for reset password token in URL
   useEffect(() => {
@@ -114,7 +144,7 @@ export function GolfLeaderboardApp() {
     }, 150);
   };
 
-  // Loading state
+  // Loading state - will auto-reload after 3 seconds if stuck
   if (isLoading) {
     return <LoadingView message="Setting up your golf experience..." />;
   }
