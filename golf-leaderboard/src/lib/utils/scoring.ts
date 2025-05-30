@@ -23,20 +23,20 @@ export interface ScoreData {
    * - 100+: 0 points
    * - 96-99: 1 point
    * - 90-95: 2 points
-   * - 85-89: 3 points
-   * - 80-84: 4 points
-   * - 75-79: 5 points
-   * - Below 75: 6 points
+   * - 86-89: 3 points
+   * - 80-85: 4 points
+   * - 76-79: 5 points
+   * - Below 76: 6 points
    */
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   export function calculatePoints(rawScore: number, coursePar: number): number {
     if (rawScore >= 100) return 0;
     if (rawScore >= 96) return 1;
     if (rawScore >= 90) return 2;
-    if (rawScore >= 85) return 3;
+    if (rawScore >= 86) return 3;
     if (rawScore >= 80) return 4;
     if (rawScore >= 75) return 5;
-    return 6; // Below 75
+    return 6; // Below 76
   }
   
   /**
