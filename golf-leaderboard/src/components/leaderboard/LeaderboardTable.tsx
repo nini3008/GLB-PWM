@@ -310,7 +310,7 @@ export function LeaderboardTable({ seasonId, onReturn }: LeaderboardProps) {
               </AvatarFallback>
             </Avatar>
             <div>
-              <p className="font-medium">{player.username}</p>
+              <p style={{textTransform: 'capitalize'}} className="font-medium">{player.username}</p>
               {index === 0 && (
                 <Badge variant="outline" className="bg-yellow-50 text-yellow-700 border-yellow-200 mt-1">
                   Leader
