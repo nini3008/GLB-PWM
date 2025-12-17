@@ -230,6 +230,85 @@ export interface Database {
           }
         ]
       }
+      achievements: {
+        Row: {
+          id: string
+          key: string
+          name: string
+          description: string
+          icon: string
+          category: string
+          tier: string
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          key: string
+          name: string
+          description: string
+          icon: string
+          category: string
+          tier?: string
+          created_at?: string
+        }
+        Update: {
+          id?: string
+          key?: string
+          name?: string
+          description?: string
+          icon?: string
+          category?: string
+          tier?: string
+          created_at?: string
+        }
+        Relationships: []
+      }
+      user_achievements: {
+        Row: {
+          id: string
+          user_id: string
+          achievement_id: string
+          earned_at: string
+          season_id: string | null
+          metadata: Json | null
+        }
+        Insert: {
+          id?: string
+          user_id: string
+          achievement_id: string
+          earned_at?: string
+          season_id?: string | null
+          metadata?: Json | null
+        }
+        Update: {
+          id?: string
+          user_id?: string
+          achievement_id?: string
+          earned_at?: string
+          season_id?: string | null
+          metadata?: Json | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "user_achievements_user_id_fkey"
+            columns: ["user_id"]
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "user_achievements_achievement_id_fkey"
+            columns: ["achievement_id"]
+            referencedRelation: "achievements"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "user_achievements_season_id_fkey"
+            columns: ["season_id"]
+            referencedRelation: "seasons"
+            referencedColumns: ["id"]
+          }
+        ]
+      }
       seasons: {
         Row: {
           id: string

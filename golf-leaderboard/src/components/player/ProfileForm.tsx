@@ -16,12 +16,21 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
-import { ArrowLeft, User, Save, Calendar, Flag, Award, TrendingUp } from 'lucide-react';
+import { ArrowLeft, User, Save, Calendar, Flag, Award, TrendingUp, Trophy } from 'lucide-react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Badge } from "@/components/ui/badge";
-import { getUserRecentScores } from '@/lib/supabase/client';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { getUserRecentScores, getUserSeasonScores, getUserSeasons, getUserAchievements, getUserSeasonRank } from '@/lib/supabase/client';
 import { useAuth } from '@/context/AuthContext';
+import { checkAndAwardAchievements } from '@/lib/utils/achievements';
+import BadgesDisplay from './BadgesDisplay';
 
 // Form validation schema
 const profileFormSchema = z.object({
@@ -51,15 +60,39 @@ interface RecentScore {
   };
 }
 
+interface Achievement {
+  id: string;
+  key: string;
+  name: string;
+  description: string;
+  icon: string;
+  category: string;
+  tier: string;
+}
+
+interface UserAchievement {
+  id: string;
+  earned_at: string;
+  season_id: string | null;
+  metadata: unknown;
+  achievements: Achievement;
+  seasons?: {
+    name: string;
+  } | null;
+}
+
 export default function ProfileForm({ onReturn }: { onReturn: () => void }) {
   const { user, profile } = useUser();
-  const { updateProfile } = useAuth(); 
+  const { updateProfile } = useAuth();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [recentScores, setRecentScores] = useState<RecentScore[]>([]);
   const [isLoadingScores, setIsLoadingScores] = useState(true);
   const [formattedDates, setFormattedDates] = useState<Record<string, string>>({});
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  const [activeTab, setActiveTab] = useState("profile");
+  const [seasons, setSeasons] = useState<Array<{ id: string; name: string }>>([]);
+  const [selectedSeason, setSelectedSeason] = useState<string>('all');
+  const [userAchievements, setUserAchievements] = useState<UserAchievement[]>([]);
+  const [isLoadingAchievements, setIsLoadingAchievements] = useState(true);
+  const [seasonRank, setSeasonRank] = useState<{ rank: number; totalPlayers: number } | null>(null);
 
   const form = useForm<ProfileFormValues>({
     resolver: zodResolver(profileFormSchema),
@@ -99,39 +132,95 @@ export default function ProfileForm({ onReturn }: { onReturn: () => void }) {
     }
   }, [profile, form]);
 
-  // Load recent scores
+  // Load user's seasons
   useEffect(() => {
-    const loadRecentScores = async () => {
+    const loadSeasons = async () => {
       if (!user) return;
-      
+
+      try {
+        const userSeasons = await getUserSeasons(user.id);
+        setSeasons(userSeasons);
+      } catch (error) {
+        console.error('Error loading seasons:', error);
+      }
+    };
+
+    loadSeasons();
+  }, [user]);
+
+  // Load achievements
+  useEffect(() => {
+    const loadAchievements = async () => {
+      if (!user) return;
+
+      setIsLoadingAchievements(true);
+      try {
+        const achievements = await getUserAchievements(user.id);
+        setUserAchievements(achievements);
+
+        // Check for new achievements
+        if (selectedSeason !== 'all') {
+          await checkAndAwardAchievements(user.id, selectedSeason);
+        } else {
+          await checkAndAwardAchievements(user.id);
+        }
+      } catch (error) {
+        console.error('Error loading achievements:', error);
+      } finally {
+        setIsLoadingAchievements(false);
+      }
+    };
+
+    loadAchievements();
+  }, [user, selectedSeason]);
+
+  // Load scores based on selected season
+  useEffect(() => {
+    const loadScores = async () => {
+      if (!user) return;
+
       setIsLoadingScores(true);
       try {
-        const scores = await getUserRecentScores(user.id);
+        let scores;
+        if (selectedSeason === 'all') {
+          scores = await getUserRecentScores(user.id);
+        } else {
+          scores = await getUserSeasonScores(user.id, selectedSeason);
+        }
+
         setRecentScores(scores);
-        
+
         // Format game dates for all scores
         const gameDates: Record<string, string> = {};
-        scores.forEach(score => {
+        scores.forEach((score: RecentScore) => {
           gameDates[score.id] = new Date(score.games.game_date).toLocaleDateString('en-US', {
             year: 'numeric',
             month: 'short',
             day: 'numeric',
           });
         });
-        
+
         setFormattedDates(prev => ({
           ...prev,
           ...gameDates
         }));
+
+        // Get season rank if season is selected
+        if (selectedSeason !== 'all') {
+          const rank = await getUserSeasonRank(user.id, selectedSeason);
+          setSeasonRank(rank);
+        } else {
+          setSeasonRank(null);
+        }
       } catch (error) {
-        console.error('Error loading recent scores:', error);
+        console.error('Error loading scores:', error);
       } finally {
         setIsLoadingScores(false);
       }
     };
 
-    loadRecentScores();
-  }, [user]);
+    loadScores();
+  }, [user, selectedSeason]);
 
   // Calculate average score
   const averageScore = recentScores.length > 0
@@ -262,14 +351,54 @@ export default function ProfileForm({ onReturn }: { onReturn: () => void }) {
         </Card>
       </div>
 
+      {/* Season Filter */}
+      <Card className="border-none shadow-md mb-8">
+        <CardContent className="pt-6">
+          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+            <div className="flex-1 w-full sm:w-auto">
+              <Label htmlFor="season-select" className="text-sm font-medium text-gray-700 mb-2 block">
+                Filter by Season
+              </Label>
+              <Select value={selectedSeason} onValueChange={setSelectedSeason}>
+                <SelectTrigger id="season-select" className="w-full sm:w-64">
+                  <SelectValue placeholder="Select season" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All Seasons</SelectItem>
+                  {seasons.map((season) => (
+                    <SelectItem key={season.id} value={season.id}>
+                      {season.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            {seasonRank && (
+              <div className="flex items-center gap-2 bg-gradient-to-r from-yellow-50 to-amber-50 px-4 py-3 rounded-lg border border-yellow-200">
+                <Trophy className="h-5 w-5 text-yellow-600" />
+                <div>
+                  <p className="text-xs text-gray-600">Season Rank</p>
+                  <p className="text-lg font-bold text-yellow-700">
+                    #{seasonRank.rank} <span className="text-sm font-normal text-gray-600">of {seasonRank.totalPlayers}</span>
+                  </p>
+                </div>
+              </div>
+            )}
+          </div>
+        </CardContent>
+      </Card>
+
       {/* Main Content Tabs */}
-      <Tabs defaultValue="profile" className="w-full" onValueChange={setActiveTab}>
-        <TabsList className="grid grid-cols-2 mb-6">
+      <Tabs defaultValue="profile" className="w-full">
+        <TabsList className="grid grid-cols-3 mb-6">
           <TabsTrigger value="profile" className="text-base font-medium">
-            Profile Information
+            Profile
           </TabsTrigger>
           <TabsTrigger value="scores" className="text-base font-medium">
-            Recent Scores
+            Scores
+          </TabsTrigger>
+          <TabsTrigger value="achievements" className="text-base font-medium">
+            Achievements
           </TabsTrigger>
         </TabsList>
         
@@ -496,6 +625,13 @@ export default function ProfileForm({ onReturn }: { onReturn: () => void }) {
               )}
             </CardContent>
           </Card>
+        </TabsContent>
+
+        <TabsContent value="achievements">
+          <BadgesDisplay
+            userAchievements={userAchievements}
+            isLoading={isLoadingAchievements}
+          />
         </TabsContent>
       </Tabs>
     </div>

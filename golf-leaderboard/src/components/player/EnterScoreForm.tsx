@@ -37,15 +37,16 @@ import {
   Medal,
   Loader2
 } from 'lucide-react';
-import { 
-  validateRoundCode, 
-  hasUserSubmittedScore, 
+import {
+  validateRoundCode,
+  hasUserSubmittedScore,
   isUserInSeason,
   submitScore,
   getGameScores,
   updateScoreBonusPoints
 } from '@/lib/supabase/client';
 import { calculateFullScore, updateBonusPoints } from '@/lib/utils/scoring';
+import { checkAndAwardAchievements } from '@/lib/utils/achievements';
 import { Separator } from '@/components/ui/separator';
 import { Progress } from '@/components/ui/progress';
 
@@ -284,7 +285,10 @@ export default function EnterScoreForm({ onReturn }: { onReturn: () => void }) {
             console.log(`No update needed for player ${update.playerId} (current=${scoreToUpdate?.bonus_points}, should=${shouldHaveBonus})`);
           }
       }
-      
+
+      // Check and award achievements
+      await checkAndAwardAchievements(user.id, gameDetails.season_id);
+
       toast.success("Score submitted successfully!", {
         description: `You earned ${calculatedScore.totalPoints} points for this round.`,
       });

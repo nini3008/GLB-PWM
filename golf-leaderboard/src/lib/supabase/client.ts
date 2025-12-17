@@ -1,6 +1,6 @@
 // src/lib/supabase/client.ts
 import { createClient } from '@supabase/supabase-js';
-import { Database } from './types';
+import { Database, Json } from './types';
 import { updateBonusPoints } from '../utils/scoring';
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL as string;
@@ -286,8 +286,8 @@ export async function recalculateBonusPoints(gameId: string) {
     };
   }
 
-// Get user's recent scores (limited to last 10)
-export async function getUserRecentScores(userId: string, limit: number = 10) {
+// Get user's scores (all scores for accurate average calculation)
+export async function getUserRecentScores(userId: string) {
   const { data, error } = await supabase
     .from('scores')
     .select(`
@@ -301,15 +301,14 @@ export async function getUserRecentScores(userId: string, limit: number = 10) {
         name,
         game_date,
         courses:course_id (
-          name, 
+          name,
           par
         )
       )
     `)
     .eq('player_id', userId)
-    .order('submitted_at', { ascending: false })
-    .limit(limit);
-  
+    .order('submitted_at', { ascending: false });
+
   if (error) throw error;
   return data;
 }
@@ -390,7 +389,168 @@ export async function getGameStatus(gameId: string) {
       .eq('id', gameId)
       .select()
       .single();
-    
+
     if (error) throw error;
     return data;
+  }
+
+  // ===== ACHIEVEMENTS FUNCTIONS =====
+
+  // Get all available achievements
+  export async function getAllAchievements() {
+    const { data, error } = await supabase
+      .from('achievements')
+      .select('*')
+      .order('category', { ascending: true });
+
+    if (error) throw error;
+    return data;
+  }
+
+  // Get user's earned achievements
+  export async function getUserAchievements(userId: string) {
+    const { data, error } = await supabase
+      .from('user_achievements')
+      .select(`
+        id,
+        earned_at,
+        season_id,
+        metadata,
+        achievements:achievement_id (
+          id,
+          key,
+          name,
+          description,
+          icon,
+          category,
+          tier
+        ),
+        seasons:season_id (
+          name
+        )
+      `)
+      .eq('user_id', userId)
+      .order('earned_at', { ascending: false });
+
+    if (error) throw error;
+    return data;
+  }
+
+  // Award achievement to user (called from client-side after detection)
+  export async function awardAchievement(
+    userId: string,
+    achievementKey: string,
+    seasonId?: string,
+    metadata?: Record<string, unknown>
+  ) {
+    // First get the achievement ID by key
+    const { data: achievement, error: achError } = await supabase
+      .from('achievements')
+      .select('id')
+      .eq('key', achievementKey)
+      .single();
+
+    if (achError || !achievement) throw achError || new Error('Achievement not found');
+
+    // Check if already earned
+    let query = supabase
+      .from('user_achievements')
+      .select('id')
+      .eq('user_id', userId)
+      .eq('achievement_id', achievement.id);
+
+    // Add season filter if provided, otherwise check for null
+    if (seasonId) {
+      query = query.eq('season_id', seasonId);
+    } else {
+      query = query.is('season_id', null);
+    }
+
+    const { data: existing } = await query.maybeSingle();
+
+    if (existing) {
+      return { alreadyEarned: true, data: null };
+    }
+
+    // Award the achievement
+    const insertData: {
+      user_id: string;
+      achievement_id: string;
+      season_id?: string | null;
+      metadata?: Json | null;
+    } = {
+      user_id: userId,
+      achievement_id: achievement.id,
+    };
+
+    if (seasonId !== undefined) {
+      insertData.season_id = seasonId;
+    }
+
+    if (metadata !== undefined) {
+      insertData.metadata = metadata as Json;
+    }
+
+    const { data, error } = await supabase
+      .from('user_achievements')
+      .insert(insertData)
+      .select(`
+        id,
+        earned_at,
+        achievements:achievement_id (
+          name,
+          description,
+          icon,
+          tier
+        )
+      `)
+      .single();
+
+    if (error) throw error;
+    return { alreadyEarned: false, data };
+  }
+
+  // Get user's season-specific scores for stats calculation
+  export async function getUserSeasonScores(userId: string, seasonId: string) {
+    const { data, error } = await supabase
+      .from('scores')
+      .select(`
+        id,
+        raw_score,
+        points,
+        bonus_points,
+        submitted_at,
+        games:game_id (
+          id,
+          name,
+          game_date,
+          season_id,
+          courses:course_id (
+            name,
+            par
+          )
+        )
+      `)
+      .eq('player_id', userId)
+      .eq('games.season_id', seasonId)
+      .order('submitted_at', { ascending: false });
+
+    if (error) throw error;
+
+    // Filter out any scores where games is null (shouldn't happen but be safe)
+    return data.filter(score => score.games !== null);
+  }
+
+  // Get user's rank in a specific season
+  export async function getUserSeasonRank(userId: string, seasonId: string) {
+    const { data, error } = await supabase
+      .from('season_leaderboard')
+      .select('player_id, total_points')
+      .eq('season_id', seasonId)
+      .order('total_points', { ascending: false });
+
+    if (error) throw error;
+
+    const rank = data.findIndex(player => player.player_id === userId) + 1;
+    return { rank, totalPlayers: data.length };
   }
