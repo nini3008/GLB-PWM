@@ -169,7 +169,7 @@ export function PlayerCard({ playerId, isOpen, onClose }: PlayerCardProps) {
                     <div>
                       <p className="text-sm font-medium text-green-900 mb-1">About</p>
                       <p className="text-sm text-gray-700 italic leading-relaxed">
-                        "{playerData.profile.bio}"
+                        &ldquo;{playerData.profile.bio}&rdquo;
                       </p>
                     </div>
                   </div>

@@ -103,7 +103,7 @@ export default function RecalculateHandicaps({ onReturn }: RecalculateHandicapsP
             <ul className="text-sm text-blue-800 space-y-1 list-disc list-inside">
               <li>Fetches all player scores from database</li>
               <li>Calculates handicap using USGA system (best 8 of all rounds)</li>
-              <li>Updates each player's profile with new handicap</li>
+              <li>Updates each player&apos;s profile with new handicap</li>
               <li>Shows progress and results</li>
             </ul>
           </div>

@@ -126,6 +126,7 @@ export function LeaderboardTable({ seasonId, onReturn }: LeaderboardProps) {
     };
 
     fetchSeasons();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   // Fetch leaderboard data when season changes

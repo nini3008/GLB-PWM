@@ -138,10 +138,10 @@ export default function CreateSeasonForm({ onReturn }: CreateSeasonFormProps) {
       setTimeout(() => {
         onReturn();
       }, 5000);
-    } catch (error: any) {
+    } catch (error) {
       console.error("Error creating season:", error);
       toast.error("Failed to create season", {
-        description: error.message || "Please try again.",
+        description: error instanceof Error ? error.message : "Please try again.",
       });
     } finally {
       setIsSubmitting(false);

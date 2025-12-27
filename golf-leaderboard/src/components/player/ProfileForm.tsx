@@ -30,7 +30,6 @@ import {
 import { getUserRecentScores, getUserSeasonScores, getUserSeasons, getUserAchievements, getUserSeasonRank, updatePlayerHandicap } from '@/lib/supabase/client';
 import { useAuth } from '@/context/AuthContext';
 import { checkAndAwardAchievements } from '@/lib/utils/achievements';
-import { formatHandicap, getHandicapCategory } from '@/lib/utils/handicap';
 import BadgesDisplay from './BadgesDisplay';
 
 // Form validation schema
