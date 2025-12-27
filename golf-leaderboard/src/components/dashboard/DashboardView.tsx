@@ -13,12 +13,14 @@ export default function DashboardView({ isAdmin, onNavigate }: DashboardViewProp
   return (
     <div className="space-y-8">
       {/* Main Header */}
-      <div className="bg-gradient-to-r from-green-600 to-emerald-600 rounded-xl shadow-lg p-6 text-white">
+      <div className="bg-white rounded-xl p-6 border border-gray-100">
         <div className="flex items-center gap-3">
-          <Trophy className="h-10 w-10" />
+          <div className="bg-gradient-to-br from-green-600 to-emerald-600 p-3 rounded-lg">
+            <Trophy className="h-8 w-8 text-white" />
+          </div>
           <div>
-            <h2 className="text-3xl font-bold">Dashboard</h2>
-            <p className="text-green-100 text-sm mt-1">
+            <h2 className="text-3xl font-bold text-gray-800">Dashboard</h2>
+            <p className="text-gray-600 text-sm mt-1">
               {isAdmin ? 'Admin Controls & Player Tools' : 'Welcome back! Ready to play?'}
             </p>
           </div>
@@ -26,7 +28,7 @@ export default function DashboardView({ isAdmin, onNavigate }: DashboardViewProp
       </div>
 
       {/* Player Tools Section */}
-      <div className="bg-white rounded-xl shadow-lg p-6">
+      <div className="bg-white rounded-xl p-6 border border-gray-100">
         <div className="flex items-center gap-2 mb-6">
           <User className="h-6 w-6 text-green-600" />
           <h3 className="text-xl font-bold text-gray-800">Player Tools</h3>
@@ -72,7 +74,7 @@ export default function DashboardView({ isAdmin, onNavigate }: DashboardViewProp
 
       {/* Admin Tools Section */}
       {isAdmin && (
-        <div className="bg-gradient-to-br from-green-50 to-emerald-50 rounded-xl shadow-lg p-6 border-2 border-green-200">
+        <div className="bg-gradient-to-br from-green-50 to-emerald-50 rounded-xl p-6 border border-green-100">
           <div className="flex items-center gap-2 mb-6">
             <Shield className="h-6 w-6 text-green-700" />
             <h3 className="text-xl font-bold text-green-900">Admin Controls</h3>
