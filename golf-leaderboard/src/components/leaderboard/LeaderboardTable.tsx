@@ -1,23 +1,23 @@
 'use client'
 // src/components/leaderboard/LeaderboardTable.tsx
 import React, { useState, useEffect } from 'react';
-import { 
-  Card, 
-  CardHeader, 
-  CardTitle, 
-  CardDescription, 
-  CardContent 
+import {
+  Card,
+  CardHeader,
+  CardTitle,
+  CardDescription,
+  CardContent
 } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { 
-  Table, 
-  TableBody, 
-  TableCell, 
-  TableHead, 
-  TableHeader, 
-  TableRow 
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow
 } from '@/components/ui/table';
-import { 
+import {
   Select,
   SelectContent,
   SelectItem,
@@ -30,6 +30,7 @@ import { Award, Trophy, Medal, ArrowLeft, Users, Info, FileText, X } from 'lucid
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { getSeasonLeaderboard, supabase, isUserAdmin } from '@/lib/supabase/client';
 import { useAuth } from '@/context/AuthContext';
+import { PlayerCard } from './PlayerCard';
 
 // Types for leaderboard data
 interface LeaderboardPlayer {
@@ -56,6 +57,14 @@ export function LeaderboardTable({ seasonId, onReturn }: LeaderboardProps) {
   const [isMobile, setIsMobile] = useState(false);
   const [isAdmin, setIsAdmin] = useState(false);
   const [showReport, setShowReport] = useState(false);
+  const [selectedPlayerId, setSelectedPlayerId] = useState<string | null>(null);
+  const [isPlayerCardOpen, setIsPlayerCardOpen] = useState(false);
+
+  // Handle player name click
+  const handlePlayerClick = (playerId: string) => {
+    setSelectedPlayerId(playerId);
+    setIsPlayerCardOpen(true);
+  };
 
   // Check if current user is admin
   useEffect(() => {
@@ -301,16 +310,22 @@ export function LeaderboardTable({ seasonId, onReturn }: LeaderboardProps) {
           <div className="flex items-center gap-3">
             {getRankDisplay(index + 1)}
             <Avatar>
-              <AvatarImage 
-                src={player.profile_image_url || undefined} 
-                alt={player.username} 
+              <AvatarImage
+                src={player.profile_image_url || undefined}
+                alt={player.username}
               />
               <AvatarFallback className="bg-green-100 text-green-700">
                 {getInitials(player.username)}
               </AvatarFallback>
             </Avatar>
             <div>
-              <p style={{textTransform: 'capitalize'}} className="font-medium">{player.username}</p>
+              <button
+                onClick={() => handlePlayerClick(player.player_id)}
+                style={{textTransform: 'capitalize'}}
+                className="font-medium text-left hover:text-green-600 hover:underline transition-colors"
+              >
+                {player.username}
+              </button>
               {index === 0 && (
                 <Badge variant="outline" className="bg-yellow-50 text-yellow-700 border-yellow-200 mt-1">
                   Leader
@@ -443,16 +458,21 @@ export function LeaderboardTable({ seasonId, onReturn }: LeaderboardProps) {
                         <TableCell>
                           <div className="flex items-center gap-3">
                             <Avatar>
-                              <AvatarImage 
-                                src={player.profile_image_url || undefined} 
-                                alt={player.username} 
+                              <AvatarImage
+                                src={player.profile_image_url || undefined}
+                                alt={player.username}
                               />
                               <AvatarFallback className="bg-green-100 text-green-700">
                                 {getInitials(player.username)}
                               </AvatarFallback>
                             </Avatar>
                             <div>
-                              <p className="font-medium">{player.username}</p>
+                              <button
+                                onClick={() => handlePlayerClick(player.player_id)}
+                                className="font-medium text-left hover:text-green-600 hover:underline transition-colors"
+                              >
+                                {player.username}
+                              </button>
                               {index === 0 && (
                                 <Badge variant="outline" className="bg-yellow-50 text-yellow-700 border-yellow-200">
                                   Leader
@@ -489,9 +509,18 @@ export function LeaderboardTable({ seasonId, onReturn }: LeaderboardProps) {
           )}
         </CardContent>
       </Card>
-      
+
       {/* Report Modal */}
       {renderReport()}
+
+      {/* Player Card Modal */}
+      {selectedPlayerId && (
+        <PlayerCard
+          playerId={selectedPlayerId}
+          isOpen={isPlayerCardOpen}
+          onClose={() => setIsPlayerCardOpen(false)}
+        />
+      )}
     </>
   );
 }

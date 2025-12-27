@@ -27,9 +27,10 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { getUserRecentScores, getUserSeasonScores, getUserSeasons, getUserAchievements, getUserSeasonRank } from '@/lib/supabase/client';
+import { getUserRecentScores, getUserSeasonScores, getUserSeasons, getUserAchievements, getUserSeasonRank, updatePlayerHandicap } from '@/lib/supabase/client';
 import { useAuth } from '@/context/AuthContext';
 import { checkAndAwardAchievements } from '@/lib/utils/achievements';
+import { formatHandicap, getHandicapCategory } from '@/lib/utils/handicap';
 import BadgesDisplay from './BadgesDisplay';
 
 // Form validation schema
@@ -184,6 +185,8 @@ export default function ProfileForm({ onReturn }: { onReturn: () => void }) {
         let scores;
         if (selectedSeason === 'all') {
           scores = await getUserRecentScores(user.id);
+          // Calculate and update handicap when viewing all scores
+          await updatePlayerHandicap(user.id);
         } else {
           scores = await getUserSeasonScores(user.id, selectedSeason);
         }

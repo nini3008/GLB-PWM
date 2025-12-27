@@ -43,7 +43,8 @@ import {
   isUserInSeason,
   submitScore,
   getGameScores,
-  updateScoreBonusPoints
+  updateScoreBonusPoints,
+  updatePlayerHandicap
 } from '@/lib/supabase/client';
 import { calculateFullScore, updateBonusPoints } from '@/lib/utils/scoring';
 import { checkAndAwardAchievements } from '@/lib/utils/achievements';
@@ -288,6 +289,9 @@ export default function EnterScoreForm({ onReturn }: { onReturn: () => void }) {
 
       // Check and award achievements
       await checkAndAwardAchievements(user.id, gameDetails.season_id);
+
+      // Update player handicap
+      await updatePlayerHandicap(user.id);
 
       toast.success("Score submitted successfully!", {
         description: `You earned ${calculatedScore.totalPoints} points for this round.`,

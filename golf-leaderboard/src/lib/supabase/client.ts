@@ -2,6 +2,7 @@
 import { createClient } from '@supabase/supabase-js';
 import { Database, Json } from './types';
 import { updateBonusPoints } from '../utils/scoring';
+import { calculateHandicap, ScoreForHandicap } from '../utils/handicap';
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL as string;
 const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY as string;
@@ -43,13 +44,14 @@ export async function getUserSeasons(userId: string) {
         name,
         code,
         start_date,
-        end_date
+        end_date,
+        is_active
       )
     `)
     .eq('player_id', userId);
-  
+
   if (error) throw error;
-  
+
   // Transform the data to make it easier to work with
   return data.map(participant => ({
     id: participant.seasons.id,
@@ -57,6 +59,7 @@ export async function getUserSeasons(userId: string) {
     code: participant.seasons.code,
     startDate: participant.seasons.start_date,
     endDate: participant.seasons.end_date,
+    isActive: participant.seasons.is_active,
     participantId: participant.id
   }));
 }
@@ -553,4 +556,151 @@ export async function getGameStatus(gameId: string) {
 
     const rank = data.findIndex(player => player.player_id === userId) + 1;
     return { rank, totalPlayers: data.length };
+  }
+
+  // Get comprehensive player card data for modal display
+  export async function getPlayerCardData(userId: string) {
+    // Get profile
+    const { data: profile, error: profileError } = await supabase
+      .from('profiles')
+      .select('username, first_name, last_name, bio, handicap, profile_image_url')
+      .eq('id', userId)
+      .single();
+
+    if (profileError) throw profileError;
+
+    // Get ALL scores for stats calculation
+    const { data: allScores, error: allScoresError } = await supabase
+      .from('scores')
+      .select('raw_score, points, bonus_points')
+      .eq('player_id', userId);
+
+    if (allScoresError) throw allScoresError;
+
+    // Calculate stats from ALL scores
+    const stats = {
+      gamesPlayed: (allScores || []).length,
+      averageScore: (allScores || []).length > 0
+        ? (allScores || []).reduce((sum, s) => sum + s.raw_score, 0) / (allScores || []).length
+        : 0,
+      bestScore: (allScores || []).length > 0
+        ? Math.min(...(allScores || []).map(s => s.raw_score))
+        : null,
+      totalPoints: (allScores || []).reduce((sum, s) => sum + s.points + s.bonus_points, 0),
+    };
+
+    // Get recent scores with game and course info for display (limit to 10)
+    const { data: recentScores, error: scoresError } = await supabase
+      .from('scores')
+      .select(`
+        id,
+        raw_score,
+        points,
+        bonus_points,
+        submitted_at,
+        games:game_id (
+          name,
+          game_date,
+          courses:course_id (
+            name,
+            par
+          )
+        )
+      `)
+      .eq('player_id', userId)
+      .order('submitted_at', { ascending: false })
+      .limit(10);
+
+    if (scoresError) throw scoresError;
+
+    // Get achievements
+    const { data: achievements, error: achievementsError } = await supabase
+      .from('user_achievements')
+      .select(`
+        id,
+        earned_at,
+        season_id,
+        achievements:achievement_id (
+          id,
+          key,
+          name,
+          description,
+          icon,
+          category,
+          tier
+        ),
+        seasons:season_id (
+          name
+        )
+      `)
+      .eq('user_id', userId)
+      .order('earned_at', { ascending: false })
+      .limit(20);
+
+    if (achievementsError) throw achievementsError;
+
+    // Transform the data
+    const transformedScores = (recentScores || []).map(score => ({
+      id: score.id,
+      raw_score: score.raw_score,
+      points: score.points,
+      bonus_points: score.bonus_points,
+      submitted_at: score.submitted_at,
+      game: {
+        name: score.games.name,
+        game_date: score.games.game_date,
+        course: {
+          name: score.games.courses.name,
+          par: score.games.courses.par,
+        },
+      },
+    }));
+
+    return {
+      profile,
+      stats,
+      recentScores: transformedScores,
+      achievements: achievements || [],
+    };
+  }
+
+  // Calculate and update player handicap
+  export async function updatePlayerHandicap(userId: string): Promise<number | null> {
+    // Get all player scores with course par
+    const { data: scores, error } = await supabase
+      .from('scores')
+      .select(`
+        raw_score,
+        games:game_id (
+          courses:course_id (
+            par
+          )
+        )
+      `)
+      .eq('player_id', userId);
+
+    if (error) throw error;
+
+    // Transform scores for handicap calculation
+    const scoresForHandicap: ScoreForHandicap[] = (scores || [])
+      .filter(score => !!score.games?.courses?.par)
+      .map(score => ({
+        raw_score: score.raw_score,
+        par: score.games.courses.par,
+      }));
+
+    // Calculate handicap
+    const handicap = calculateHandicap(scoresForHandicap);
+
+    // Update profile with calculated handicap
+    if (handicap !== null) {
+      const { error: updateError } = await supabase
+        .from('profiles')
+        .update({ handicap })
+        .eq('id', userId);
+
+      if (updateError) throw updateError;
+    }
+
+    return handicap;
   }

@@ -147,49 +147,13 @@ export default function JoinSeasonForm({ onReturn }: JoinSeasonFormProps) {
     }
   };
 
-  // If user is in at least one season, show different content
+  // Render the join form
   const renderContent = () => {
     if (isLoadingSeasons) {
       return (
         <div className="flex flex-col items-center justify-center py-8">
           <Loader2 className="h-10 w-10 text-green-500 animate-spin mb-4" />
           <p className="text-gray-600">Checking your season memberships...</p>
-        </div>
-      );
-    }
-
-    if (userSeasons.length > 0) {
-      return (
-        <div className="text-center py-8 px-4">
-          <div className="inline-flex items-center justify-center w-20 h-20 rounded-full bg-green-100 text-green-600 mb-6">
-            <Users className="h-10 w-10" />
-          </div>
-          <h3 className="text-2xl font-bold text-green-800 mb-2">
-            You&apos;re Already Joined
-          </h3>
-          <p className="text-gray-600 max-w-md mx-auto mb-4">
-            You&apos;re already a member of {userSeasons.length} season{userSeasons.length > 1 ? 's' : ''}:
-          </p>
-          
-          <div className="mb-6 flex flex-wrap justify-center gap-2">
-            {userSeasons.map(season => (
-              <Badge key={season.id} className="bg-green-100 text-green-800 hover:bg-green-200 py-1.5 px-3">
-                {season.name}
-              </Badge>
-            ))}
-          </div>
-          
-          <div className="space-y-3">
-            <Button 
-              onClick={onReturn} 
-              className="w-full sm:w-auto bg-green-600 hover:bg-green-700"
-            >
-              Return to Dashboard
-            </Button>
-            <p className="text-sm text-gray-500">
-              If you need to join another season, contact your administrator.
-            </p>
-          </div>
         </div>
       );
     }
@@ -221,14 +185,52 @@ export default function JoinSeasonForm({ onReturn }: JoinSeasonFormProps) {
 
     return (
       <div className="space-y-6">
+        {/* Show current seasons if user has any */}
+        {userSeasons.length > 0 && (
+          <div className="bg-blue-50 p-5 rounded-xl border border-blue-100">
+            <div className="flex items-center gap-2 mb-3">
+              <Users className="h-5 w-5 text-blue-700" />
+              <h3 className="font-medium text-blue-800">
+                Your Joined Seasons ({userSeasons.length})
+              </h3>
+            </div>
+            <div className="space-y-2">
+              {userSeasons.map(season => (
+                <div key={season.id} className="flex items-center justify-between bg-white p-2 rounded border border-blue-200">
+                  <span className="text-blue-900 font-medium">{season.name}</span>
+                  <div className="flex items-center gap-2">
+                    <code className="text-xs bg-blue-50 px-2 py-1 rounded border border-blue-200">
+                      {season.code}
+                    </code>
+                    {season.isActive ? (
+                      <Badge className="bg-green-600 text-white text-xs">
+                        Active
+                      </Badge>
+                    ) : (
+                      <Badge variant="outline" className="text-xs bg-gray-100 text-gray-600">
+                        Inactive
+                      </Badge>
+                    )}
+                  </div>
+                </div>
+              ))}
+            </div>
+            <p className="text-xs text-blue-600 mt-3">
+              You can join additional seasons by entering a new season code below.
+            </p>
+          </div>
+        )}
+
         <div className="bg-green-50 p-5 rounded-xl border border-green-100 flex gap-4">
           <div className="hidden sm:flex h-10 w-10 bg-green-100 rounded-full flex-shrink-0 items-center justify-center">
             <Key className="h-5 w-5 text-green-700" />
           </div>
           <div>
-            <h3 className="font-medium text-green-800 mb-1">How to join a season</h3>
+            <h3 className="font-medium text-green-800 mb-1">
+              {userSeasons.length > 0 ? 'Join Another Season' : 'How to join a season'}
+            </h3>
             <p className="text-sm text-green-700 leading-relaxed">
-              Enter the unique season code provided by your administrator or league organizer. 
+              Enter the unique season code provided by your administrator or league organizer.
               Each code gives you access to a specific season&apos;s tournaments, leaderboards and events.
             </p>
           </div>
@@ -279,7 +281,11 @@ export default function JoinSeasonForm({ onReturn }: JoinSeasonFormProps) {
           <div className="bg-amber-50 p-4 rounded-lg border border-amber-100">
             <p className="text-sm text-amber-800 flex items-start gap-2">
               <AlertCircle className="h-5 w-5 text-amber-500 flex-shrink-0" />
-              <span>You only need to join a season once. After joining, you&apos;ll have access to all rounds and events in that season.</span>
+              <span>
+                {userSeasons.length > 0
+                  ? "You can join multiple seasons. All your previous season data remains accessible."
+                  : "You only need to join a season once. After joining, you'll have access to all rounds and events in that season."}
+              </span>
             </p>
           </div>
           
