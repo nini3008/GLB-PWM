@@ -32,7 +32,7 @@ interface PlayerData {
   stats: {
     gamesPlayed: number;
     averageScore: number;
-    bestScore: number;
+    bestScore: number | null;
     totalPoints: number;
   };
   recentScores: Array<{
