@@ -3,10 +3,8 @@ import { screen, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { PlayerCard } from '../PlayerCard'
 import { render } from '@/__tests__/utils/test-utils'
-import {
-  mockPlayerCardData,
-  createMockGetPlayerCardData,
-} from '@/__tests__/utils/supabase-mocks'
+import { mockPlayerCardData } from '@/__tests__/utils/supabase-mocks'
+import * as supabaseClient from '@/lib/supabase/client'
 
 // Mock the supabase client module
 jest.mock('@/lib/supabase/client', () => ({
@@ -14,9 +12,16 @@ jest.mock('@/lib/supabase/client', () => ({
 }))
 
 // Mock BadgesDisplay component
+interface Achievement {
+  id: string
+  achievements: {
+    name: string
+  }
+}
+
 jest.mock('@/components/player/BadgesDisplay', () => ({
   __esModule: true,
-  default: ({ userAchievements }: { userAchievements: any[] }) => (
+  default: ({ userAchievements }: { userAchievements: Achievement[] }) => (
     <div data-testid="badges-display">
       {userAchievements.map((ach) => (
         <div key={ach.id} data-testid="achievement">
@@ -34,7 +39,7 @@ describe('PlayerCard Component', () => {
 
   beforeEach(() => {
     jest.clearAllMocks()
-    getPlayerCardData = require('@/lib/supabase/client').getPlayerCardData
+    getPlayerCardData = supabaseClient.getPlayerCardData as jest.Mock
     getPlayerCardData.mockResolvedValue(mockPlayerCardData)
   })
 
@@ -92,7 +97,6 @@ describe('PlayerCard Component', () => {
     })
 
     it('should call onClose when dialog is dismissed', async () => {
-      const user = userEvent.setup()
       render(
         <PlayerCard
           playerId={testPlayerId}

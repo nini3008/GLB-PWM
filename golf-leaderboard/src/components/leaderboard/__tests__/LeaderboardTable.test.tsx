@@ -7,9 +7,8 @@ import {
   mockSeasons,
   mockLeaderboardData,
   mockLeaderboardDataWithTies,
-  createMockGetSeasonLeaderboard,
-  createMockIsUserAdmin,
 } from '@/__tests__/utils/supabase-mocks'
+import * as supabaseClient from '@/lib/supabase/client'
 
 // Mock the supabase client module
 jest.mock('@/lib/supabase/client', () => ({
@@ -52,8 +51,8 @@ describe('LeaderboardTable Component', () => {
 
   beforeEach(() => {
     jest.clearAllMocks()
-    getSeasonLeaderboard = require('@/lib/supabase/client').getSeasonLeaderboard
-    isUserAdmin = require('@/lib/supabase/client').isUserAdmin
+    getSeasonLeaderboard = supabaseClient.getSeasonLeaderboard as jest.Mock
+    isUserAdmin = supabaseClient.isUserAdmin as jest.Mock
 
     // Default mocks
     getSeasonLeaderboard.mockResolvedValue(mockLeaderboardData)
