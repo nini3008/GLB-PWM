@@ -37,6 +37,8 @@ import {
   AlertCircle
 } from 'lucide-react';
 import { supabase, createGame } from '@/lib/supabase/client';
+import { useNavigation } from '@/hooks/useNavigation';
+import QRCodeDisplay from '@/components/ui/QRCodeDisplay';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
 import { Progress } from '@/components/ui/progress';
@@ -66,8 +68,9 @@ interface Season {
   is_active: boolean;
 }
 
-export default function CreateGameForm({ onReturn }: { onReturn: () => void }) {
+export default function CreateGameForm() {
   const { user } = useUser();
+  const nav = useNavigation();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isSuccess, setIsSuccess] = useState(false);
   const [courses, setCourses] = useState<Course[]>([]);
@@ -206,7 +209,7 @@ export default function CreateGameForm({ onReturn }: { onReturn: () => void }) {
       
       // Redirect to dashboard after short delay
       setTimeout(() => {
-        onReturn();
+        nav.goToDashboard();
       }, 5000);
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
     } catch (error: any) {
@@ -258,7 +261,7 @@ export default function CreateGameForm({ onReturn }: { onReturn: () => void }) {
         <Button 
           variant="outline" 
           size="sm" 
-          onClick={onReturn} 
+          onClick={nav.goToDashboard} 
           className="flex items-center gap-2 transition-all hover:bg-green-50"
         >
           <ArrowLeft className="h-4 w-4" />
@@ -310,7 +313,7 @@ export default function CreateGameForm({ onReturn }: { onReturn: () => void }) {
               
               <div className="bg-gray-50 p-6 rounded-xl mb-8 max-w-md mx-auto">
                 <p className="text-sm text-gray-500 mb-2">Round Code</p>
-                <div className="flex items-center justify-center gap-3">
+                <div className="flex items-center justify-center gap-3 mb-4">
                   <div className="text-3xl font-bold tracking-widest text-green-700 bg-green-50 px-4 py-2 rounded-lg border border-green-100">
                     {submittedCode}
                   </div>
@@ -324,11 +327,12 @@ export default function CreateGameForm({ onReturn }: { onReturn: () => void }) {
                     {codeCopied ? "Copied" : "Copy"}
                   </Button>
                 </div>
+                <QRCodeDisplay value={submittedCode} />
               </div>
               
               <div className="space-y-4">
                 <Button 
-                  onClick={onReturn} 
+                  onClick={nav.goToDashboard} 
                   className="bg-green-600 hover:bg-green-700"
                 >
                   Return to Dashboard

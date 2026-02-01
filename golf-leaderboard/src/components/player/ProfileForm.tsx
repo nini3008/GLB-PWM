@@ -6,6 +6,7 @@ import { z } from 'zod';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { toast } from 'sonner';
 import { useUser } from '@/hooks/useUser';
+import { useNavigation } from '@/hooks/useNavigation';
 import {
   Card,
   CardContent,
@@ -27,11 +28,14 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { getUserRecentScores, getUserSeasonScores, getUserSeasons, getUserAchievements, getUserSeasonRank, updatePlayerHandicap } from '@/lib/supabase/client';
+import { getUserRecentScores, getUserSeasonScores, getUserSeasons, getUserAchievements, getUserSeasonRank, updatePlayerHandicap, getAllAchievements } from '@/lib/supabase/client';
 import { useAuth } from '@/context/AuthContext';
 import { formatDate } from '@/lib/utils';
 import { checkAndAwardAchievements } from '@/lib/utils/achievements';
+import { getAchievementProgress, AchievementProgress } from '@/lib/utils/achievementProgress';
 import BadgesDisplay from './BadgesDisplay';
+import ScoreChart from './ScoreChart';
+import PlayerStats from './PlayerStats';
 
 // Form validation schema
 const profileFormSchema = z.object({
@@ -82,8 +86,9 @@ interface UserAchievement {
   } | null;
 }
 
-export default function ProfileForm({ onReturn }: { onReturn: () => void }) {
+export default function ProfileForm() {
   const { user, profile } = useUser();
+  const nav = useNavigation();
   const { updateProfile } = useAuth();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [recentScores, setRecentScores] = useState<RecentScore[]>([]);
@@ -94,6 +99,8 @@ export default function ProfileForm({ onReturn }: { onReturn: () => void }) {
   const [userAchievements, setUserAchievements] = useState<UserAchievement[]>([]);
   const [isLoadingAchievements, setIsLoadingAchievements] = useState(true);
   const [seasonRank, setSeasonRank] = useState<{ rank: number; totalPlayers: number } | null>(null);
+  const [allAchievementsList, setAllAchievementsList] = useState<Achievement[]>([]);
+  const [achievementProgress, setAchievementProgress] = useState<Map<string, AchievementProgress>>(new Map());
 
   const form = useForm<ProfileFormValues>({
     resolver: zodResolver(profileFormSchema),
@@ -152,8 +159,12 @@ export default function ProfileForm({ onReturn }: { onReturn: () => void }) {
 
       setIsLoadingAchievements(true);
       try {
-        const achievements = await getUserAchievements(user.id);
+        const [achievements, allAchs] = await Promise.all([
+          getUserAchievements(user.id),
+          getAllAchievements(),
+        ]);
         setUserAchievements(achievements);
+        setAllAchievementsList(allAchs);
 
         // Check for new achievements
         if (selectedSeason !== 'all') {
@@ -161,6 +172,13 @@ export default function ProfileForm({ onReturn }: { onReturn: () => void }) {
         } else {
           await checkAndAwardAchievements(user.id);
         }
+
+        // Load progress
+        const progress = await getAchievementProgress(
+          user.id,
+          selectedSeason !== 'all' ? selectedSeason : undefined
+        );
+        setAchievementProgress(progress);
       } catch (error) {
         console.error('Error loading achievements:', error);
       } finally {
@@ -282,7 +300,7 @@ export default function ProfileForm({ onReturn }: { onReturn: () => void }) {
         <Button 
           variant="outline" 
           size="sm" 
-          onClick={onReturn} 
+          onClick={nav.goToDashboard} 
           className="flex items-center gap-2 transition-all hover:bg-green-50"
         >
           <ArrowLeft className="h-4 w-4" />
@@ -520,6 +538,21 @@ export default function ProfileForm({ onReturn }: { onReturn: () => void }) {
         </TabsContent>
         
         <TabsContent value="scores">
+          {/* Score Chart & Stats */}
+          {!isLoadingScores && recentScores.length > 0 && (
+            <div className="space-y-6 mb-6">
+              <ScoreChart
+                scores={recentScores.map(s => ({
+                  date: s.games.game_date,
+                  score: s.raw_score,
+                  par: s.games.courses.par,
+                  courseName: s.games.courses.name,
+                }))}
+              />
+              <PlayerStats scores={recentScores} />
+            </div>
+          )}
+
           <Card className="border-none shadow-md">
             <CardHeader className="pb-2">
               <div className="flex items-center justify-between">
@@ -626,6 +659,8 @@ export default function ProfileForm({ onReturn }: { onReturn: () => void }) {
           <BadgesDisplay
             userAchievements={userAchievements}
             isLoading={isLoadingAchievements}
+            allAchievements={allAchievementsList}
+            progress={achievementProgress}
           />
         </TabsContent>
       </Tabs>

@@ -11,6 +11,7 @@ import { Badge } from '@/components/ui/badge';
 import { ArrowLeft, Calendar, Flag, Ticket, RefreshCw } from 'lucide-react';
 import { toast } from 'sonner';
 import { useAuth } from '@/context/AuthContext';
+import { useNavigation } from '@/hooks/useNavigation';
 
 // Define interface for game data
 interface Game {
@@ -27,7 +28,8 @@ interface Game {
   };
 }
 
-export default function ManageGamesView({ onReturn }: { onReturn: () => void }) {
+export default function ManageGamesView() {
+  const nav = useNavigation();
   const [games, setGames] = useState<Game[]>([]);
   const [loading, setLoading] = useState(true);
   const { isAdmin } = useAuth();
@@ -200,7 +202,7 @@ export default function ManageGamesView({ onReturn }: { onReturn: () => void }) 
         <Button 
           variant="outline" 
           size="sm" 
-          onClick={onReturn}
+          onClick={nav.goToDashboard}
           className="self-start sm:self-center"
         >
           <ArrowLeft className="mr-2 h-4 w-4" />

@@ -5,13 +5,11 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { ArrowLeft, Loader2, RefreshCw, CheckCircle2, AlertCircle } from 'lucide-react';
 import { supabase, updatePlayerHandicap } from '@/lib/supabase/client';
+import { useNavigation } from '@/hooks/useNavigation';
 import { toast } from 'sonner';
 
-interface RecalculateHandicapsProps {
-  onReturn: () => void;
-}
-
-export default function RecalculateHandicaps({ onReturn }: RecalculateHandicapsProps) {
+export default function RecalculateHandicaps() {
+  const nav = useNavigation();
   const [isProcessing, setIsProcessing] = useState(false);
   const [progress, setProgress] = useState({ current: 0, total: 0 });
   const [results, setResults] = useState<{ success: number; failed: number; errors: string[] }>({
@@ -80,7 +78,7 @@ export default function RecalculateHandicaps({ onReturn }: RecalculateHandicapsP
         <Button
           variant="outline"
           size="sm"
-          onClick={onReturn}
+          onClick={nav.goToDashboard}
           disabled={isProcessing}
           className="flex items-center gap-2"
         >

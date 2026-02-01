@@ -3,13 +3,20 @@
 import React from 'react';
 import { Award, PlusCircle, Calendar, Flag, User, Users, ListIcon, Medal, ClipboardList, Trophy, Shield } from 'lucide-react';
 import DashboardCard from './DashboardCard';
+import QuickStatsBar from './QuickStatsBar';
+import PendingScoresBanner from './PendingScoresBanner';
+import ActivityFeed from './ActivityFeed';
+import { useUser } from '@/hooks/useUser';
+import { useNavigation } from '@/hooks/useNavigation';
 
 interface DashboardViewProps {
   isAdmin: boolean;
-  onNavigate: (view: string) => void;
 }
 
-export default function DashboardView({ isAdmin, onNavigate }: DashboardViewProps) {
+export default function DashboardView({ isAdmin }: DashboardViewProps) {
+  const { user } = useUser();
+  const nav = useNavigation();
+
   return (
     <div className="space-y-8">
       {/* Main Header */}
@@ -27,6 +34,15 @@ export default function DashboardView({ isAdmin, onNavigate }: DashboardViewProp
         </div>
       </div>
 
+      {/* Quick Stats, Pending Scores & Activity Feed */}
+      {user && (
+        <>
+          <QuickStatsBar userId={user.id} />
+          <PendingScoresBanner userId={user.id} onNavigateToEnterScore={nav.goToEnterScore} />
+          <ActivityFeed userId={user.id} />
+        </>
+      )}
+
       {/* Player Tools Section */}
       <div className="bg-white rounded-xl p-6 border border-gray-100">
         <div className="flex items-center gap-2 mb-6">
@@ -39,35 +55,35 @@ export default function DashboardView({ isAdmin, onNavigate }: DashboardViewProp
             title="View Leaderboard"
             icon={<Award />}
             description="Check the current standings"
-            onClick={() => onNavigate('leaderboard')}
+            onClick={nav.goToLeaderboard}
           />
 
           <DashboardCard
             title="Enter Score"
             icon={<PlusCircle />}
             description="Add your score from a game"
-            onClick={() => onNavigate('enterScore')}
+            onClick={nav.goToEnterScore}
           />
 
           <DashboardCard
             title="Join Season"
             icon={<Calendar />}
             description="Enter a season code"
-            onClick={() => onNavigate('joinSeason')}
+            onClick={nav.goToJoinSeason}
           />
 
           <DashboardCard
             title="My Profile"
             icon={<User />}
             description="View and edit your profile"
-            onClick={() => onNavigate('profile')}
+            onClick={nav.goToProfile}
           />
 
           <DashboardCard
             title="View Round Scores"
             icon={<ClipboardList />}
             description="See scores for a round"
-            onClick={() => onNavigate('viewScores')}
+            onClick={nav.goToViewScores}
           />
         </div>
       </div>
@@ -90,7 +106,7 @@ export default function DashboardView({ isAdmin, onNavigate }: DashboardViewProp
               title="Create Season"
               icon={<Calendar />}
               description="Create a new season"
-              onClick={() => onNavigate('createSeason')}
+              onClick={nav.goToCreateSeason}
               isAdmin={true}
             />
 
@@ -98,7 +114,7 @@ export default function DashboardView({ isAdmin, onNavigate }: DashboardViewProp
               title="Manage Seasons"
               icon={<Calendar />}
               description="Activate/deactivate seasons"
-              onClick={() => onNavigate('manageSeasons')}
+              onClick={nav.goToManageSeasons}
               isAdmin={true}
             />
 
@@ -106,7 +122,7 @@ export default function DashboardView({ isAdmin, onNavigate }: DashboardViewProp
               title="Create Game"
               icon={<Flag />}
               description="Set up a new game"
-              onClick={() => onNavigate('createGame')}
+              onClick={nav.goToCreateGame}
               isAdmin={true}
             />
 
@@ -114,7 +130,7 @@ export default function DashboardView({ isAdmin, onNavigate }: DashboardViewProp
               title="View Round Codes"
               icon={<ListIcon />}
               description="See all game codes"
-              onClick={() => onNavigate('viewCodes')}
+              onClick={nav.goToManageGames}
               isAdmin={true}
             />
 
@@ -122,7 +138,7 @@ export default function DashboardView({ isAdmin, onNavigate }: DashboardViewProp
               title="Manage Scores"
               icon={<Users />}
               description="Edit or delete scores"
-              onClick={() => onNavigate('manageScores')}
+              onClick={nav.goToManageScores}
               isAdmin={true}
             />
 
@@ -130,7 +146,7 @@ export default function DashboardView({ isAdmin, onNavigate }: DashboardViewProp
               title="Fix Bonus Points"
               icon={<Medal />}
               description="Recalculate bonus points"
-              onClick={() => onNavigate('bonusRecalculate')}
+              onClick={nav.goToBonusRecalculate}
               isAdmin={true}
             />
 
@@ -138,7 +154,15 @@ export default function DashboardView({ isAdmin, onNavigate }: DashboardViewProp
               title="Recalculate Handicaps"
               icon={<Users />}
               description="Update all player handicaps"
-              onClick={() => onNavigate('recalculateHandicaps')}
+              onClick={nav.goToRecalculateHandicaps}
+              isAdmin={true}
+            />
+
+            <DashboardCard
+              title="Manage Courses"
+              icon={<Flag />}
+              description="Add and edit golf courses"
+              onClick={nav.goToManageCourses}
               isAdmin={true}
             />
           </div>

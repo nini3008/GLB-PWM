@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { useUser } from '@/hooks/useUser';
+import { useNavigation } from '@/hooks/useNavigation';
 import {
   Card,
   CardContent,
@@ -30,8 +31,10 @@ import { ArrowLeft, AlertCircle, ChevronDown, Calendar, Flag, ClipboardCheck } f
 import {
   getGameScores,
   validateRoundCode,
+  getRoundRecap,
 } from '@/lib/supabase/client';
 import { formatDate } from '@/lib/utils';
+import RoundRecap from './RoundRecap';
 
 // Types
 interface ScoreWithPlayer {
@@ -59,8 +62,9 @@ interface GameWithCourse {
   };
 }
 
-export default function ViewScoresComponent({ onReturn }: { onReturn: () => void }) {
+export default function ViewScoresComponent() {
   const { user } = useUser();
+  const nav = useNavigation();
   const [gameScores, setGameScores] = useState<ScoreWithPlayer[]>([]);
   const [selectedGame, setSelectedGame] = useState<GameWithCourse | null>(null);
   const [roundCode, setRoundCode] = useState('');
@@ -69,6 +73,8 @@ export default function ViewScoresComponent({ onReturn }: { onReturn: () => void
   const [formattedDates, setFormattedDates] = useState<Record<string, string>>({});
   const [expandedNotes, setExpandedNotes] = useState<string | null>(null);
   const [isMobile, setIsMobile] = useState(false);
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const [roundRecap, setRoundRecap] = useState<any>(null);
 
   // Check viewport size on mount and window resize
   useEffect(() => {
@@ -142,6 +148,14 @@ export default function ViewScoresComponent({ onReturn }: { onReturn: () => void
         }));
       
       setGameScores(validScores);
+
+      // Load round recap
+      try {
+        const recap = await getRoundRecap(game.id);
+        setRoundRecap(recap);
+      } catch {
+        // Non-critical, ignore
+      }
     } catch (error: unknown) {
       const err = error as { message?: string; status?: number; details?: string };
       if (process.env.NODE_ENV !== 'production') {
@@ -271,7 +285,7 @@ export default function ViewScoresComponent({ onReturn }: { onReturn: () => void
           <Button 
             variant="outline" 
             size="sm" 
-            onClick={onReturn}
+            onClick={nav.goToDashboard}
             className="self-start sm:self-center"
           >
             <ArrowLeft className="mr-2 h-4 w-4" />
@@ -337,6 +351,11 @@ export default function ViewScoresComponent({ onReturn }: { onReturn: () => void
               </div>
             )}
             
+            {/* Round Recap */}
+            {roundRecap && roundRecap.scores.length > 0 && (
+              <RoundRecap recap={roundRecap} />
+            )}
+
             {/* Scores display */}
             {selectedGame && (
               <>

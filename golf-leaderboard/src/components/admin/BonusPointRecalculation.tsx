@@ -7,6 +7,7 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { toast } from 'sonner';
 import { Loader2, RefreshCw, AlertCircle, CheckCircle, ArrowLeft } from 'lucide-react';
 import { recalculateBonusPoints, validateRoundCode, getGameScores } from '@/lib/supabase/client';
+import { useNavigation } from '@/hooks/useNavigation';
 
 // Define types to match exact API response structure
 type GameDetails = {
@@ -54,11 +55,8 @@ type RecalculationResult = {
   message: string;
 };
 
-type BonusPointRecalculationProps = {
-  onReturn: () => void;
-};
-
-export default function BonusPointRecalculation({ onReturn }: BonusPointRecalculationProps) {
+export default function BonusPointRecalculation() {
+  const nav = useNavigation();
   const [roundCode, setRoundCode] = useState<string>('');
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [gameDetails, setGameDetails] = useState<GameDetails | null>(null);
@@ -137,7 +135,7 @@ export default function BonusPointRecalculation({ onReturn }: BonusPointRecalcul
         <Button 
           variant="outline" 
           size="sm" 
-          onClick={onReturn} 
+          onClick={nav.goToDashboard} 
           className="flex items-center gap-2 transition-all hover:bg-green-50"
         >
           <ArrowLeft className="h-4 w-4" />

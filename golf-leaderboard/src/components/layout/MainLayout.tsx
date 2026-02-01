@@ -2,6 +2,7 @@
 'use client'
 
 import React from 'react';
+import { useRouter } from 'next/navigation';
 import Header from './Header';
 import Footer from './Footer';
 import { useAuth } from '@/context/AuthContext';
@@ -12,9 +13,11 @@ interface MainLayoutProps {
 
 export default function MainLayout({ children }: MainLayoutProps) {
   const { profile, isAdmin, signOut } = useAuth();
-  
+  const router = useRouter();
+
   const handleLogout = async () => {
     await signOut();
+    router.replace('/login');
   };
 
   return (

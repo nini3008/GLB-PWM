@@ -21,8 +21,10 @@ import {
   Trophy
 } from 'lucide-react';
 import { supabase } from '@/lib/supabase/client';
+import { useNavigation } from '@/hooks/useNavigation';
 import { formatDate } from '@/lib/utils';
 import { Skeleton } from '@/components/ui/skeleton';
+import SeasonSummary from '@/components/season/SeasonSummary';
 
 interface Season {
   id: string;
@@ -35,14 +37,13 @@ interface Season {
   participant_count?: number;
 }
 
-interface ManageSeasonsViewProps {
-  onReturn: () => void;
-}
-
-export default function ManageSeasonsView({ onReturn }: ManageSeasonsViewProps) {
+export default function ManageSeasonsView() {
+  const nav = useNavigation();
   const [seasons, setSeasons] = useState<Season[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [updatingSeasonId, setUpdatingSeasonId] = useState<string | null>(null);
+  const [summarySeasonId, setSummarySeasonId] = useState<string | null>(null);
+  const [summarySeasonName, setSummarySeasonName] = useState('');
 
   // Fetch all seasons
   useEffect(() => {
@@ -114,6 +115,15 @@ export default function ManageSeasonsView({ onReturn }: ManageSeasonsViewProps) 
             : 'Season is now archived. Players can still view data.',
         }
       );
+
+      // Show summary when deactivating
+      if (currentStatus) {
+        const season = seasons.find(s => s.id === seasonId);
+        if (season) {
+          setSummarySeasonId(seasonId);
+          setSummarySeasonName(season.name);
+        }
+      }
     } catch (error) {
       console.error('Error updating season:', error);
       toast.error('Failed to update season', {
@@ -134,7 +144,7 @@ export default function ManageSeasonsView({ onReturn }: ManageSeasonsViewProps) 
         <Button
           variant="outline"
           size="sm"
-          onClick={onReturn}
+          onClick={nav.goToDashboard}
           className="flex items-center gap-2 transition-all hover:bg-green-50"
         >
           <ArrowLeft className="h-4 w-4" />
@@ -230,6 +240,20 @@ export default function ManageSeasonsView({ onReturn }: ManageSeasonsViewProps) 
                     </div>
 
                     <div className="flex items-center gap-2">
+                      {!season.is_active && (
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => {
+                            setSummarySeasonId(season.id);
+                            setSummarySeasonName(season.name);
+                          }}
+                          className="border-gray-300 text-gray-700 hover:bg-gray-100"
+                        >
+                          <Trophy className="h-4 w-4 mr-1" />
+                          Summary
+                        </Button>
+                      )}
                       <Button
                         onClick={() => toggleSeasonStatus(season.id, season.is_active)}
                         disabled={updatingSeasonId === season.id}
@@ -271,6 +295,17 @@ export default function ManageSeasonsView({ onReturn }: ManageSeasonsViewProps) 
           )}
         </CardContent>
       </Card>
+
+      {summarySeasonId && (
+        <SeasonSummary
+          seasonId={summarySeasonId}
+          seasonName={summarySeasonName}
+          open={!!summarySeasonId}
+          onOpenChange={(open) => {
+            if (!open) setSummarySeasonId(null);
+          }}
+        />
+      )}
     </div>
   );
 }

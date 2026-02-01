@@ -3,12 +3,10 @@
 import React, { useState } from 'react';
 import { Mail, ArrowLeft } from 'lucide-react';
 import { useAuth } from '@/context/AuthContext';
+import { useNavigation } from '@/hooks/useNavigation';
 
-interface ForgotPasswordFormProps {
-  onBackToLogin: () => void;
-}
-
-export default function ForgotPasswordForm({ onBackToLogin }: ForgotPasswordFormProps) {
+export default function ForgotPasswordForm() {
+  const nav = useNavigation();
   const [email, setEmail] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -47,7 +45,7 @@ export default function ForgotPasswordForm({ onBackToLogin }: ForgotPasswordForm
   return (
     <div className="max-w-md mx-auto bg-white p-8 rounded-lg shadow-md">
       <button 
-        onClick={onBackToLogin}
+        onClick={nav.goToLogin}
         className="flex items-center text-green-600 hover:text-green-700 mb-4"
         disabled={isLoading}
       >
@@ -67,7 +65,7 @@ export default function ForgotPasswordForm({ onBackToLogin }: ForgotPasswordForm
           <p className="font-medium">Reset Link Sent!</p>
           <p className="mt-1">Check your email for instructions to reset your password.</p>
           <button
-            onClick={onBackToLogin}
+            onClick={nav.goToLogin}
             className="w-full bg-green-600 hover:bg-green-700 text-white py-2 rounded font-bold transition duration-200 mt-4"
           >
             Back to Login

@@ -2,14 +2,11 @@
 
 import React, { useState } from 'react';
 import { useAuth } from '@/context/AuthContext';
+import { useNavigation } from '@/hooks/useNavigation';
 import { LogIn } from 'lucide-react';
 
-interface LoginFormProps {
-  onRegisterClick: () => void;
-  onForgotPasswordClick: () => void;
-}
-
-export default function LoginForm({ onRegisterClick, onForgotPasswordClick }: LoginFormProps) {
+export default function LoginForm() {
+  const nav = useNavigation();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [isLoading, setIsLoading] = useState(false);
@@ -82,7 +79,7 @@ export default function LoginForm({ onRegisterClick, onForgotPasswordClick }: Lo
           <div className="flex justify-end mt-1">
             <button 
               type="button"
-              onClick={onForgotPasswordClick}
+              onClick={nav.goToForgotPassword}
               className="text-sm text-green-600 hover:underline"
               disabled={isLoading}
             >
@@ -104,7 +101,7 @@ export default function LoginForm({ onRegisterClick, onForgotPasswordClick }: Lo
         <p className="text-gray-600">
           Don&apos;t have an account?{' '}
           <button 
-            onClick={onRegisterClick} 
+            onClick={nav.goToRegister} 
             className="text-green-600 hover:underline"
             disabled={isLoading}
           >

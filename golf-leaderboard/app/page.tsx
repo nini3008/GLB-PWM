@@ -1,9 +1,18 @@
-// src/app/page.tsx
 'use client'
 
-import React from 'react';
-import { GolfLeaderboardApp }  from '../src/components/GolfLeaderboardApp';
+import { useEffect } from 'react'
+import { useRouter } from 'next/navigation'
+import { useAuth } from '@/context/AuthContext'
 
 export default function HomePage() {
-  return <GolfLeaderboardApp />;
+  const { user, isLoading } = useAuth()
+  const router = useRouter()
+
+  useEffect(() => {
+    if (!isLoading) {
+      router.replace(user ? '/dashboard' : '/login')
+    }
+  }, [user, isLoading, router])
+
+  return null
 }

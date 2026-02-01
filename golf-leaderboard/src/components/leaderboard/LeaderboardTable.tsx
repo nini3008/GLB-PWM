@@ -1,6 +1,6 @@
 'use client'
 // src/components/leaderboard/LeaderboardTable.tsx
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import {
   Card,
   CardHeader,
@@ -28,9 +28,11 @@ import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Award, Trophy, Medal, ArrowLeft, Users, Info, FileText, X } from 'lucide-react';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { getSeasonLeaderboard, supabase, isUserAdmin } from '@/lib/supabase/client';
+import { getSeasonLeaderboard, supabase, isUserAdmin, subscribeToScoreChanges } from '@/lib/supabase/client';
 import { useAuth } from '@/context/AuthContext';
+import { useNavigation } from '@/hooks/useNavigation';
 import { PlayerCard } from './PlayerCard';
+import PlayerComparison from './PlayerComparison';
 
 // Types for leaderboard data
 interface LeaderboardPlayer {
@@ -44,11 +46,11 @@ interface LeaderboardPlayer {
 
 interface LeaderboardProps {
   seasonId?: string;
-  onReturn: () => void;
 }
 
-export function LeaderboardTable({ seasonId, onReturn }: LeaderboardProps) {
+export function LeaderboardTable({ seasonId }: LeaderboardProps) {
   const { user } = useAuth();
+  const nav = useNavigation();
   const [leaderboardData, setLeaderboardData] = useState<LeaderboardPlayer[]>([]);
   const [loading, setLoading] = useState(true);
   const [seasons, setSeasons] = useState<{ id: string; name: string }[]>([]);
@@ -59,12 +61,31 @@ export function LeaderboardTable({ seasonId, onReturn }: LeaderboardProps) {
   const [showReport, setShowReport] = useState(false);
   const [selectedPlayerId, setSelectedPlayerId] = useState<string | null>(null);
   const [isPlayerCardOpen, setIsPlayerCardOpen] = useState(false);
+  const [compareIds, setCompareIds] = useState<Set<string>>(new Set());
+  const [isCompareOpen, setIsCompareOpen] = useState(false);
+  const [lastUpdated, setLastUpdated] = useState<Date | null>(null);
+  const fetchLeaderboardRef = useRef<(() => void) | null>(null);
 
   // Handle player name click
   const handlePlayerClick = (playerId: string) => {
     setSelectedPlayerId(playerId);
     setIsPlayerCardOpen(true);
   };
+
+  // Handle compare toggle
+  const toggleCompare = (playerId: string) => {
+    setCompareIds(prev => {
+      const next = new Set(prev);
+      if (next.has(playerId)) {
+        next.delete(playerId);
+      } else if (next.size < 2) {
+        next.add(playerId);
+      }
+      return next;
+    });
+  };
+
+  const compareArray = Array.from(compareIds);
 
   // Check if current user is admin
   useEffect(() => {
@@ -129,39 +150,53 @@ export function LeaderboardTable({ seasonId, onReturn }: LeaderboardProps) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  // Fetch leaderboard data when season changes
+  // Fetch leaderboard data
+  const fetchLeaderboard = useCallback(async (showLoading = true) => {
+    if (!selectedSeason) return;
+    if (showLoading) setLoading(true);
+    try {
+      const rawData = await getSeasonLeaderboard(selectedSeason);
+
+      // Filter out any entries with null player_id and transform the data
+      const validData = rawData
+        .filter(item => item.player_id !== null)
+        .map(item => ({
+          player_id: item.player_id as string,
+          username: item.username || 'Unknown Player',
+          profile_image_url: item.profile_image_url,
+          games_played: item.games_played || 0,
+          total_points: item.total_points || 0,
+          avg_score: item.avg_score || 0
+        }));
+
+      const sortedData = validData.sort((a, b) => b.total_points - a.total_points);
+      setLeaderboardData(sortedData);
+      setLastUpdated(new Date());
+    } catch (error) {
+      console.error('Error fetching leaderboard:', error);
+      setLeaderboardData([]);
+    } finally {
+      setLoading(false);
+    }
+  }, [selectedSeason]);
+
+  // Store ref for real-time callback
+  useEffect(() => {
+    fetchLeaderboardRef.current = () => fetchLeaderboard(false);
+  }, [fetchLeaderboard]);
+
+  // Fetch on season change
+  useEffect(() => {
+    fetchLeaderboard();
+  }, [fetchLeaderboard]);
+
+  // Real-time subscription
   useEffect(() => {
     if (!selectedSeason) return;
-    
-    const fetchLeaderboard = async () => {
-      setLoading(true);
-      try {
-        const rawData = await getSeasonLeaderboard(selectedSeason);
-        
-        // Filter out any entries with null player_id and transform the data
-        const validData = rawData
-          .filter(item => item.player_id !== null)
-          .map(item => ({
-            player_id: item.player_id as string, // Type assertion since we filtered nulls
-            username: item.username || 'Unknown Player',
-            profile_image_url: item.profile_image_url,
-            games_played: item.games_played || 0,
-            total_points: item.total_points || 0,
-            avg_score: item.avg_score || 0
-          }));
-        
-        // Explicitly sort the data by total_points in descending order to ensure correct ranking
-        const sortedData = validData.sort((a, b) => b.total_points - a.total_points);
-        setLeaderboardData(sortedData);
-      } catch (error) {
-        console.error('Error fetching leaderboard:', error);
-        setLeaderboardData([]);
-      } finally {
-        setLoading(false);
-      }
-    };
-  
-    fetchLeaderboard();
+    const unsubscribe = subscribeToScoreChanges(selectedSeason, () => {
+      fetchLeaderboardRef.current?.();
+    });
+    return unsubscribe;
   }, [selectedSeason]);
 
   // Get rank badge/icon
@@ -357,13 +392,37 @@ export function LeaderboardTable({ seasonId, onReturn }: LeaderboardProps) {
             </CardTitle>
             <CardDescription className="text-sm sm:text-base">
               See who&apos;s leading the competition
+              {lastUpdated && (
+                <span className="ml-2 text-xs text-green-600 font-medium">
+                  &bull; Live
+                </span>
+              )}
             </CardDescription>
           </div>
           <div className="flex gap-2">
+            {compareArray.length === 2 && selectedSeason && (
+              <Button
+                size="sm"
+                onClick={() => setIsCompareOpen(true)}
+                className="self-start sm:self-center bg-blue-600 hover:bg-blue-700"
+              >
+                Compare ({compareArray.length})
+              </Button>
+            )}
+            {compareArray.length > 0 && compareArray.length < 2 && (
+              <Button
+                size="sm"
+                variant="outline"
+                disabled
+                className="self-start sm:self-center"
+              >
+                Select 1 more
+              </Button>
+            )}
             {isAdmin && (
-              <Button 
-                variant="outline" 
-                size="sm" 
+              <Button
+                variant="outline"
+                size="sm"
                 onClick={() => setShowReport(true)}
                 className="self-start sm:self-center"
               >
@@ -374,7 +433,7 @@ export function LeaderboardTable({ seasonId, onReturn }: LeaderboardProps) {
             <Button 
               variant="outline" 
               size="sm" 
-              onClick={onReturn}
+              onClick={nav.goToDashboard}
               className="self-start sm:self-center"
             >
               <ArrowLeft className="mr-2 h-4 w-4" />
@@ -419,6 +478,7 @@ export function LeaderboardTable({ seasonId, onReturn }: LeaderboardProps) {
               <Table>
                 <TableHeader>
                   <TableRow className="bg-gray-50">
+                    <TableHead className="w-10"></TableHead>
                     <TableHead className="w-16">Rank</TableHead>
                     <TableHead>Player</TableHead>
                     <TableHead className="text-right">Points</TableHead>
@@ -431,6 +491,7 @@ export function LeaderboardTable({ seasonId, onReturn }: LeaderboardProps) {
                     // Loading skeletons
                     Array(5).fill(0).map((_, i) => (
                       <TableRow key={i}>
+                        <TableCell><Skeleton className="h-4 w-4" /></TableCell>
                         <TableCell><Skeleton className="h-8 w-8 rounded-full" /></TableCell>
                         <TableCell>
                           <div className="flex items-center gap-2">
@@ -445,7 +506,7 @@ export function LeaderboardTable({ seasonId, onReturn }: LeaderboardProps) {
                     ))
                   ) : leaderboardData.length === 0 ? (
                     <TableRow>
-                      <TableCell colSpan={5} className="h-24 text-center">
+                      <TableCell colSpan={6} className="h-24 text-center">
                         No data available for this season
                       </TableCell>
                     </TableRow>
@@ -455,6 +516,15 @@ export function LeaderboardTable({ seasonId, onReturn }: LeaderboardProps) {
                         key={player.player_id}
                         className={index < 3 ? "bg-green-50" : undefined}
                       >
+                        <TableCell>
+                          <input
+                            type="checkbox"
+                            checked={compareIds.has(player.player_id)}
+                            onChange={() => toggleCompare(player.player_id)}
+                            disabled={!compareIds.has(player.player_id) && compareIds.size >= 2}
+                            className="h-4 w-4 rounded border-gray-300 text-green-600 focus:ring-green-500"
+                          />
+                        </TableCell>
                         <TableCell>{getRankDisplay(index + 1)}</TableCell>
                         <TableCell>
                           <div className="flex items-center gap-3">
@@ -520,6 +590,17 @@ export function LeaderboardTable({ seasonId, onReturn }: LeaderboardProps) {
           playerId={selectedPlayerId}
           isOpen={isPlayerCardOpen}
           onClose={() => setIsPlayerCardOpen(false)}
+        />
+      )}
+
+      {/* Player Comparison Modal */}
+      {compareArray.length === 2 && selectedSeason && (
+        <PlayerComparison
+          player1Id={compareArray[0]}
+          player2Id={compareArray[1]}
+          seasonId={selectedSeason}
+          isOpen={isCompareOpen}
+          onClose={() => setIsCompareOpen(false)}
         />
       )}
     </>

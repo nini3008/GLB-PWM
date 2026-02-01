@@ -6,6 +6,7 @@ import { z } from 'zod';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { toast } from 'sonner';
 import { useUser } from '@/hooks/useUser';
+import { useNavigation } from '@/hooks/useNavigation';
 import {
   Card,
   CardContent,
@@ -16,19 +17,21 @@ import {
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { 
-  ArrowLeft, 
-  CheckCircle2, 
-  AlertCircle, 
-  Calendar, 
-  UserPlus, 
+  ArrowLeft,
+  CheckCircle2,
+  AlertCircle,
+  Calendar,
+  UserPlus,
   Trophy,
   Loader2,
   Lock,
   Key,
-  Users
+  Users,
+  Camera
 } from 'lucide-react';
 import { joinSeason, getUserSeasons } from '@/lib/supabase/client';
 import { Badge } from '@/components/ui/badge';
+import QRScanner from '@/components/ui/QRScanner';
 
 // Form validation schema
 const seasonFormSchema = z.object({
@@ -37,18 +40,16 @@ const seasonFormSchema = z.object({
 
 type SeasonFormValues = z.infer<typeof seasonFormSchema>;
 
-interface JoinSeasonFormProps {
-  onReturn: () => void;
-}
-
-export default function JoinSeasonForm({ onReturn }: JoinSeasonFormProps) {
+export default function JoinSeasonForm() {
   const { user } = useUser();
+  const nav = useNavigation();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isSuccess, setIsSuccess] = useState(false);
   const [seasonError, setSeasonError] = useState<string | null>(null);
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const [userSeasons, setUserSeasons] = useState<any[]>([]);
   const [isLoadingSeasons, setIsLoadingSeasons] = useState(true);
+  const [showQRScanner, setShowQRScanner] = useState(false);
 
   const form = useForm<SeasonFormValues>({
     resolver: zodResolver(seasonFormSchema),
@@ -121,7 +122,7 @@ export default function JoinSeasonForm({ onReturn }: JoinSeasonFormProps) {
       
       // Redirect to dashboard after short delay
       setTimeout(() => {
-        onReturn();
+        nav.goToDashboard();
       }, 3000);
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
     } catch (error: any) {
@@ -170,7 +171,7 @@ export default function JoinSeasonForm({ onReturn }: JoinSeasonFormProps) {
           </p>
           <div className="space-y-3">
             <Button 
-              onClick={onReturn} 
+              onClick={nav.goToDashboard} 
               className="w-full sm:w-auto bg-green-600 hover:bg-green-700"
             >
               Return to Dashboard
@@ -255,13 +256,32 @@ export default function JoinSeasonForm({ onReturn }: JoinSeasonFormProps) {
                   }
                 })}
                 id="seasonCode"
-                className={`pl-10 text-center text-xl uppercase tracking-widest font-medium py-6 
+                className={`pl-10 text-center text-xl uppercase tracking-widest font-medium py-6
                   ${seasonError ? 'border-red-300 focus:ring-red-300' : 'border-gray-300 focus:border-green-500 focus:ring focus:ring-green-200'} transition-all`}
                 placeholder="ENTER CODE"
                 autoFocus
                 autoComplete="off"
               />
             </div>
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => setShowQRScanner(true)}
+              className="w-full flex items-center justify-center gap-2 border-gray-300 hover:bg-green-50 hover:text-green-700"
+            >
+              <Camera className="h-4 w-4" />
+              Scan QR Code
+            </Button>
+
+            {showQRScanner && (
+              <QRScanner
+                onScan={(value) => {
+                  form.setValue('seasonCode', value.toUpperCase());
+                  setShowQRScanner(false);
+                }}
+                onClose={() => setShowQRScanner(false)}
+              />
+            )}
             
             {form.formState.errors.seasonCode && (
               <p className="mt-2 text-sm text-red-500 flex items-center gap-1">
@@ -327,7 +347,7 @@ export default function JoinSeasonForm({ onReturn }: JoinSeasonFormProps) {
         <Button 
           variant="outline" 
           size="sm" 
-          onClick={onReturn} 
+          onClick={nav.goToDashboard} 
           className="flex items-center gap-2 transition-all hover:bg-green-50"
         >
           <ArrowLeft className="h-4 w-4" />

@@ -50,6 +50,7 @@ import {
   deleteScore
 } from '@/lib/supabase/client';
 import { formatDate } from '@/lib/utils';
+import { useNavigation } from '@/hooks/useNavigation';
 import { calculatePoints, updateBonusPoints } from '@/lib/utils/scoring';
 
 // Form validation schema
@@ -89,8 +90,9 @@ interface GameWithCourse {
   };
 }
 
-export default function ManageScoresView({ onReturn }: { onReturn: () => void }) {
+export default function ManageScoresView() {
   const { user } = useUser();
+  const nav = useNavigation();
   const [isLoading, setIsLoading] = useState(false);
   const [gameScores, setGameScores] = useState<ScoreWithPlayer[]>([]);
   const [selectedGame, setSelectedGame] = useState<GameWithCourse | null>(null);
@@ -544,7 +546,7 @@ export default function ManageScoresView({ onReturn }: { onReturn: () => void })
           <Button 
             variant="outline" 
             size="sm" 
-            onClick={onReturn}
+            onClick={nav.goToDashboard}
             className="self-start sm:self-center"
           >
             <ArrowLeft className="mr-2 h-4 w-4" />

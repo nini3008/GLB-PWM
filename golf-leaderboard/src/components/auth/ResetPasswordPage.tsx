@@ -4,11 +4,7 @@ import React, { useState, useEffect } from 'react';
 import { LockKeyhole, CheckCircle } from 'lucide-react';
 import { supabase } from '@/lib/supabase/client';
 
-interface ResetPasswordPageProps {
-  onComplete: () => void;
-}
-
-export default function ResetPasswordPage({ onComplete }: ResetPasswordPageProps) {
+export default function ResetPasswordPage() {
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [isLoading, setIsLoading] = useState(false);
@@ -58,7 +54,7 @@ export default function ResetPasswordPage({ onComplete }: ResetPasswordPageProps
       clearInterval(countdownInterval);
       clearTimeout(redirectTimer);
     };
-  }, [success, onComplete]);
+  }, [success]);
 
   // Automatic timeout protection for the entire form submission process
   useEffect(() => {

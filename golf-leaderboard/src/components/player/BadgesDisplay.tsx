@@ -5,6 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import * as LucideIcons from 'lucide-react';
 import { formatDate } from '@/lib/utils';
+import { AchievementProgress } from '@/lib/utils/achievementProgress';
 
 interface Achievement {
   id: string;
@@ -29,9 +30,16 @@ interface UserAchievement {
 interface BadgesDisplayProps {
   userAchievements: UserAchievement[];
   isLoading: boolean;
+  allAchievements?: Achievement[];
+  progress?: Map<string, AchievementProgress>;
 }
 
-export default function BadgesDisplay({ userAchievements, isLoading }: BadgesDisplayProps) {
+export default function BadgesDisplay({
+  userAchievements,
+  isLoading,
+  allAchievements,
+  progress,
+}: BadgesDisplayProps) {
   // Get tier color
   const getTierColor = (tier: string) => {
     switch (tier) {
@@ -71,8 +79,17 @@ export default function BadgesDisplay({ userAchievements, isLoading }: BadgesDis
     return Icon ? <Icon className="h-5 w-5" /> : <LucideIcons.Award className="h-5 w-5" />;
   };
 
-  // Group achievements by category
-  const groupedAchievements = userAchievements.reduce((acc, ua) => {
+  // Determine which achievements to show
+  const earnedAchievementKeys = new Set(userAchievements.map(ua => ua.achievements.key));
+
+  // If allAchievements provided, compute earned and locked
+  const earnedAchievements = userAchievements;
+  const lockedAchievements = allAchievements
+    ? allAchievements.filter(a => !earnedAchievementKeys.has(a.key))
+    : [];
+
+  // Group earned achievements by category
+  const groupedEarnedAchievements = earnedAchievements.reduce((acc, ua) => {
     const category = ua.achievements.category;
     if (!acc[category]) {
       acc[category] = [];
@@ -80,6 +97,22 @@ export default function BadgesDisplay({ userAchievements, isLoading }: BadgesDis
     acc[category].push(ua);
     return acc;
   }, {} as Record<string, UserAchievement[]>);
+
+  // Group locked achievements by category
+  const groupedLockedAchievements = lockedAchievements.reduce((acc, a) => {
+    const category = a.category;
+    if (!acc[category]) {
+      acc[category] = [];
+    }
+    acc[category].push(a);
+    return acc;
+  }, {} as Record<string, Achievement[]>);
+
+  // Combine categories
+  const allCategories = new Set([
+    ...Object.keys(groupedEarnedAchievements),
+    ...Object.keys(groupedLockedAchievements),
+  ]);
 
   if (isLoading) {
     return (
@@ -99,7 +132,7 @@ export default function BadgesDisplay({ userAchievements, isLoading }: BadgesDis
     );
   }
 
-  if (userAchievements.length === 0) {
+  if (userAchievements.length === 0 && !allAchievements) {
     return (
       <Card className="border-none shadow-md">
         <CardHeader>
@@ -130,60 +163,120 @@ export default function BadgesDisplay({ userAchievements, isLoading }: BadgesDis
             Achievements
           </CardTitle>
           <Badge variant="outline" className="bg-green-50 text-green-700 border-green-200">
-            {userAchievements.length} Earned
+            {userAchievements.length} {allAchievements ? `/ ${allAchievements.length}` : 'Earned'}
           </Badge>
         </div>
       </CardHeader>
       <CardContent>
         <div className="space-y-6">
-          {Object.entries(groupedAchievements).map(([category, achievements]) => (
-            <div key={category}>
-              <h3 className="text-sm font-semibold text-gray-600 uppercase tracking-wide mb-3 flex items-center gap-2">
-                <span>{getCategoryEmoji(category)}</span>
-                {category}
-              </h3>
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                {achievements.map((ua) => (
-                  <div
-                    key={ua.id}
-                    className={`p-4 rounded-lg border-2 ${getTierColor(ua.achievements.tier)} transition-all hover:shadow-md`}
-                  >
-                    <div className="flex items-start gap-3">
-                      <div className="flex-shrink-0">
-                        {getIcon(ua.achievements.icon)}
-                      </div>
-                      <div className="flex-1 min-w-0">
-                        <div className="flex items-center gap-2 mb-1">
-                          <h4 className="font-semibold text-sm truncate">
-                            {ua.achievements.name}
-                          </h4>
-                          <Badge
-                            variant="outline"
-                            className={`text-xs ${getTierColor(ua.achievements.tier)} capitalize`}
-                          >
-                            {ua.achievements.tier}
-                          </Badge>
+          {Array.from(allCategories).map((category) => {
+            const earned = groupedEarnedAchievements[category] || [];
+            const locked = groupedLockedAchievements[category] || [];
+
+            return (
+              <div key={category}>
+                <h3 className="text-sm font-semibold text-gray-600 uppercase tracking-wide mb-3 flex items-center gap-2">
+                  <span>{getCategoryEmoji(category)}</span>
+                  {category}
+                </h3>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  {/* Earned achievements first */}
+                  {earned.map((ua) => (
+                    <div
+                      key={ua.id}
+                      className={`p-4 rounded-lg border-2 ${getTierColor(ua.achievements.tier)} transition-all hover:shadow-md`}
+                    >
+                      <div className="flex items-start gap-3">
+                        <div className="flex-shrink-0">
+                          {getIcon(ua.achievements.icon)}
                         </div>
-                        <p className="text-xs text-gray-600 mb-2">
-                          {ua.achievements.description}
-                        </p>
-                        <div className="flex items-center justify-between text-xs text-gray-500">
-                          <span>
-                            {formatDate(ua.earned_at)}
-                          </span>
-                          {ua.seasons && (
-                            <span className="text-xs bg-white/50 px-2 py-0.5 rounded">
-                              {ua.seasons.name}
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center gap-2 mb-1">
+                            <h4 className="font-semibold text-sm truncate">
+                              {ua.achievements.name}
+                            </h4>
+                            <Badge
+                              variant="outline"
+                              className={`text-xs ${getTierColor(ua.achievements.tier)} capitalize`}
+                            >
+                              {ua.achievements.tier}
+                            </Badge>
+                          </div>
+                          <p className="text-xs text-gray-600 mb-2">
+                            {ua.achievements.description}
+                          </p>
+                          <div className="flex items-center justify-between text-xs text-gray-500">
+                            <span>
+                              {formatDate(ua.earned_at)}
                             </span>
-                          )}
+                            {ua.seasons && (
+                              <span className="text-xs bg-white/50 px-2 py-0.5 rounded">
+                                {ua.seasons.name}
+                              </span>
+                            )}
+                          </div>
                         </div>
                       </div>
                     </div>
-                  </div>
-                ))}
+                  ))}
+
+                  {/* Locked achievements */}
+                  {locked.map((a) => {
+                    const progressData = progress?.get(a.key);
+
+                    return (
+                      <div
+                        key={a.id}
+                        className="p-4 rounded-lg border-2 opacity-60 bg-gray-50 border-gray-200 transition-all hover:opacity-75"
+                      >
+                        <div className="flex items-start gap-3">
+                          <div className="flex-shrink-0 relative">
+                            <div className="opacity-40">
+                              {getIcon(a.icon)}
+                            </div>
+                            <LucideIcons.Lock className="h-3 w-3 absolute -top-1 -right-1 text-gray-600" />
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <div className="flex items-center gap-2 mb-1">
+                              <h4 className="font-semibold text-sm truncate text-gray-700">
+                                {a.name}
+                              </h4>
+                              <Badge
+                                variant="outline"
+                                className="text-xs bg-gray-100 text-gray-600 border-gray-300 capitalize"
+                              >
+                                {a.tier}
+                              </Badge>
+                            </div>
+                            <p className="text-xs text-gray-600 mb-2">
+                              {a.description}
+                            </p>
+
+                            {/* Progress bar if progress data exists */}
+                            {progressData && (
+                              <div className="mt-2">
+                                <div className="w-full bg-gray-200 rounded-full h-2">
+                                  <div
+                                    className="bg-green-500 h-2 rounded-full transition-all"
+                                    style={{
+                                      width: `${Math.min(100, (progressData.current / progressData.target) * 100)}%`
+                                    }}
+                                  />
+                                </div>
+                                <p className="text-xs text-gray-500 mt-1">
+                                  {progressData.label}: {progressData.current}/{progressData.target}
+                                </p>
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
               </div>
-            </div>
-          ))}
+            );
+          })}
         </div>
       </CardContent>
     </Card>

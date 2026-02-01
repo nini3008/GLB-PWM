@@ -18,6 +18,8 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { ArrowLeft, Calendar, CheckCircle2, Code, Loader2, Sparkles } from 'lucide-react';
 import { supabase } from '@/lib/supabase/client';
+import { useNavigation } from '@/hooks/useNavigation';
+import QRCodeDisplay from '@/components/ui/QRCodeDisplay';
 import { Badge } from '@/components/ui/badge';
 
 // Form validation schema
@@ -30,10 +32,6 @@ const seasonFormSchema = z.object({
 
 type SeasonFormValues = z.infer<typeof seasonFormSchema>;
 
-interface CreateSeasonFormProps {
-  onReturn: () => void;
-}
-
 interface ExistingSeason {
   id: string;
   name: string;
@@ -41,8 +39,9 @@ interface ExistingSeason {
   is_active: boolean;
 }
 
-export default function CreateSeasonForm({ onReturn }: CreateSeasonFormProps) {
+export default function CreateSeasonForm() {
   const { user } = useAuth();
+  const nav = useNavigation();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isSuccess, setIsSuccess] = useState(false);
   const [createdSeasonCode, setCreatedSeasonCode] = useState<string>('');
@@ -136,7 +135,7 @@ export default function CreateSeasonForm({ onReturn }: CreateSeasonFormProps) {
 
       // Redirect to dashboard after delay
       setTimeout(() => {
-        onReturn();
+        nav.goToDashboard();
       }, 5000);
     } catch (error) {
       console.error("Error creating season:", error);
@@ -164,7 +163,7 @@ export default function CreateSeasonForm({ onReturn }: CreateSeasonFormProps) {
 
               <div className="bg-green-50 border-2 border-green-200 rounded-lg p-6 mb-6 max-w-sm mx-auto">
                 <p className="text-sm text-green-700 mb-2 font-medium">Season Code</p>
-                <div className="flex items-center justify-center gap-3">
+                <div className="flex items-center justify-center gap-3 mb-4">
                   <code className="text-3xl font-bold text-green-800 tracking-widest">
                     {createdSeasonCode}
                   </code>
@@ -180,11 +179,12 @@ export default function CreateSeasonForm({ onReturn }: CreateSeasonFormProps) {
                     Copy
                   </Button>
                 </div>
+                <QRCodeDisplay value={createdSeasonCode} />
               </div>
 
               <div className="space-y-3">
                 <Button
-                  onClick={onReturn}
+                  onClick={nav.goToDashboard}
                   className="w-full sm:w-auto bg-green-600 hover:bg-green-700"
                 >
                   Return to Dashboard
@@ -210,7 +210,7 @@ export default function CreateSeasonForm({ onReturn }: CreateSeasonFormProps) {
         <Button
           variant="outline"
           size="sm"
-          onClick={onReturn}
+          onClick={nav.goToDashboard}
           className="flex items-center gap-2 transition-all hover:bg-green-50"
         >
           <ArrowLeft className="h-4 w-4" />

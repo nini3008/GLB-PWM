@@ -6,6 +6,7 @@ import { z } from 'zod';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { toast } from 'sonner';
 import { useUser } from '@/hooks/useUser';
+import { useNavigation } from '@/hooks/useNavigation';
 import {
   Card,
   CardContent,
@@ -26,16 +27,17 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog';
-import { 
-  AlertCircle, 
-  Check, 
-  ArrowLeft, 
-  ClipboardCheck, 
-  Shield, 
-  BadgeCheck, 
+import {
+  AlertCircle,
+  Check,
+  ArrowLeft,
+  ClipboardCheck,
+  Shield,
+  BadgeCheck,
   Flag,
   Medal,
-  Loader2
+  Loader2,
+  Camera
 } from 'lucide-react';
 import {
   validateRoundCode,
@@ -50,6 +52,7 @@ import { calculateFullScore, updateBonusPoints } from '@/lib/utils/scoring';
 import { checkAndAwardAchievements } from '@/lib/utils/achievements';
 import { Separator } from '@/components/ui/separator';
 import { Progress } from '@/components/ui/progress';
+import QRScanner from '@/components/ui/QRScanner';
 
 // Form validation schema
 const scoreFormSchema = z.object({
@@ -75,8 +78,9 @@ interface GameDetails {
   };
 }
 
-export default function EnterScoreForm({ onReturn }: { onReturn: () => void }) {
+export default function EnterScoreForm() {
   const { user } = useUser();
+  const nav = useNavigation();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [gameDetails, setGameDetails] = useState<GameDetails | null>(null);
   const [calculatedScore, setCalculatedScore] = useState<{
@@ -88,6 +92,7 @@ export default function EnterScoreForm({ onReturn }: { onReturn: () => void }) {
   } | null>(null);
   const [showConfirmation, setShowConfirmation] = useState(false);
   const [isValidatingCode, setIsValidatingCode] = useState(false);
+  const [showQRScanner, setShowQRScanner] = useState(false);
   const [codeError, setCodeError] = useState<string | null>(null);
   const [formStep, setFormStep] = useState<'code' | 'score'>('code');
 
@@ -306,7 +311,7 @@ export default function EnterScoreForm({ onReturn }: { onReturn: () => void }) {
       
       // Redirect back to dashboard after short delay
       setTimeout(() => {
-        onReturn();
+        nav.goToDashboard();
       }, 2000);
     } catch (error) {
       console.error("Error submitting score:", error);
@@ -335,7 +340,7 @@ export default function EnterScoreForm({ onReturn }: { onReturn: () => void }) {
           <Button 
             variant="outline" 
             size="sm" 
-            onClick={onReturn} 
+            onClick={nav.goToDashboard} 
             className="flex items-center gap-2 transition-all hover:bg-green-50"
           >
             <ArrowLeft className="h-4 w-4" />
@@ -429,8 +434,26 @@ export default function EnterScoreForm({ onReturn }: { onReturn: () => void }) {
                           </div>
                         )}
                       </Button>
+                      <Button
+                        type="button"
+                        variant="outline"
+                        onClick={() => setShowQRScanner(true)}
+                        className="flex-shrink-0 border-gray-300 hover:bg-green-50 hover:text-green-700"
+                      >
+                        <Camera className="h-4 w-4" />
+                      </Button>
                     </div>
-                    
+
+                    {showQRScanner && (
+                      <QRScanner
+                        onScan={(value) => {
+                          form.setValue('roundCode', value.toUpperCase());
+                          setShowQRScanner(false);
+                        }}
+                        onClose={() => setShowQRScanner(false)}
+                      />
+                    )}
+
                     {form.formState.errors.roundCode && (
                       <p className="text-sm text-red-500 mt-1 flex items-center gap-1">
                         <AlertCircle className="h-3 w-3" />
@@ -475,14 +498,30 @@ export default function EnterScoreForm({ onReturn }: { onReturn: () => void }) {
                   )}
                   
                   <div className="space-y-2">
-                    <Label htmlFor="notes" className="text-gray-700">Notes (Optional)</Label>
+                    <Label htmlFor="notes" className="text-gray-700 font-medium">Round Notes</Label>
+                    <p className="text-xs text-gray-500 -mt-1">Share highlights from your round — everyone can see these!</p>
                     <Textarea
                       {...form.register('notes')}
                       id="notes"
-                      placeholder="Add any notes about your round, weather conditions, memorable shots..."
-                      rows={3}
+                      placeholder="How was your round? Any highlights, memorable shots, or conditions worth noting?"
+                      rows={4}
                       className="resize-none border-gray-300 focus:border-green-500 focus:ring focus:ring-green-200"
                     />
+                    <div className="flex flex-wrap gap-1.5">
+                      {['Great round!', 'Tough conditions', 'New personal best', 'Lucky putt on 18'].map(suggestion => (
+                        <button
+                          key={suggestion}
+                          type="button"
+                          onClick={() => {
+                            const current = form.getValues('notes') || '';
+                            form.setValue('notes', current ? `${current} ${suggestion}` : suggestion);
+                          }}
+                          className="text-xs px-2 py-1 bg-gray-100 hover:bg-green-100 text-gray-600 hover:text-green-700 rounded-full transition-colors"
+                        >
+                          {suggestion}
+                        </button>
+                      ))}
+                    </div>
                   </div>
                   
                   <div className="flex items-center gap-2 text-sm text-amber-700 bg-amber-50 p-3 rounded-lg">

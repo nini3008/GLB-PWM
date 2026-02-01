@@ -2,14 +2,12 @@
 
 import React, { useState } from 'react';
 import { useAuth } from '@/context/AuthContext';
+import { useNavigation } from '@/hooks/useNavigation';
 import { User, CheckCircle } from 'lucide-react';
 import { toast } from 'sonner';
 
-interface RegisterFormProps {
-  onLoginClick: () => void;
-}
-
-export default function RegisterForm({ onLoginClick }: RegisterFormProps) {
+export default function RegisterForm() {
+  const nav = useNavigation();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
@@ -59,7 +57,7 @@ export default function RegisterForm({ onLoginClick }: RegisterFormProps) {
         </p>
         <p className="text-gray-500 text-sm mb-2">You can now proceed to login.</p>
         <button
-          onClick={onLoginClick}
+          onClick={nav.goToLogin}
           className="w-full bg-green-600 hover:bg-green-700 text-white py-2 rounded font-bold transition duration-200"
         >
           Back to Login
@@ -155,7 +153,7 @@ export default function RegisterForm({ onLoginClick }: RegisterFormProps) {
         <p className="text-gray-600">
           Already have an account?{' '}
           <button 
-            onClick={onLoginClick} 
+            onClick={nav.goToLogin} 
             className="text-green-600 hover:underline"
             disabled={isLoading}
           >

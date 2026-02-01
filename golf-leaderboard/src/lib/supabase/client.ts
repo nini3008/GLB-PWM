@@ -704,3 +704,400 @@ export async function getGameStatus(gameId: string) {
 
     return handicap;
   }
+
+  // ===== DASHBOARD QUERY FUNCTIONS =====
+
+  export async function getUserCurrentSeasonStats(userId: string) {
+    // Get user's active seasons
+    const { data: participations, error: pError } = await supabase
+      .from('season_participants')
+      .select('season_id, seasons:season_id (id, name, is_active)')
+      .eq('player_id', userId);
+
+    if (pError) throw pError;
+
+    const activeSeasons = (participations || []).filter(p => p.seasons?.is_active);
+    if (activeSeasons.length === 0) return null;
+
+    const season = activeSeasons[0].seasons!;
+
+    // Get leaderboard for this season
+    const { data: leaderboard, error: lError } = await supabase
+      .from('season_leaderboard')
+      .select('*')
+      .eq('season_id', season.id)
+      .order('total_points', { ascending: false });
+
+    if (lError) throw lError;
+
+    const userRow = (leaderboard || []).find(r => r.player_id === userId);
+    const rank = userRow
+      ? (leaderboard || []).findIndex(r => r.player_id === userId) + 1
+      : null;
+
+    return {
+      seasonId: season.id,
+      seasonName: season.name,
+      rank,
+      totalPlayers: (leaderboard || []).length,
+      totalPoints: userRow?.total_points ?? 0,
+      gamesPlayed: userRow?.games_played ?? 0,
+      avgScore: userRow?.avg_score ?? null,
+    };
+  }
+
+  export async function getUserPendingGames(userId: string) {
+    // Get user's active season IDs
+    const { data: participations, error: pError } = await supabase
+      .from('season_participants')
+      .select('season_id, seasons:season_id (id, is_active)')
+      .eq('player_id', userId);
+
+    if (pError) throw pError;
+
+    const activeSeasonIds = (participations || [])
+      .filter(p => p.seasons?.is_active)
+      .map(p => p.season_id);
+
+    if (activeSeasonIds.length === 0) return [];
+
+    const today = new Date().toISOString().split('T')[0];
+
+    const { data: games, error: gError } = await supabase
+      .from('games')
+      .select(`
+        id, name, game_date,
+        seasons:season_id (name),
+        courses:course_id (name)
+      `)
+      .in('season_id', activeSeasonIds)
+      .lte('game_date', today)
+      .eq('status', 'active')
+      .order('game_date', { ascending: false });
+
+    if (gError) throw gError;
+
+    const pending = [];
+    for (const game of games || []) {
+      const submitted = await hasUserSubmittedScore(game.id, userId);
+      if (!submitted) {
+        pending.push({
+          id: game.id,
+          name: game.name,
+          game_date: game.game_date,
+          season_name: game.seasons?.name ?? '',
+          course_name: game.courses?.name ?? '',
+        });
+      }
+    }
+    return pending;
+  }
+
+  // ===== COURSE MANAGEMENT FUNCTIONS =====
+
+  export async function getCourses() {
+    const { data, error } = await supabase
+      .from('courses')
+      .select('*')
+      .order('name', { ascending: true });
+
+    if (error) throw error;
+    return data;
+  }
+
+  export async function createCourse(courseData: { name: string; location?: string; par: number }) {
+    const { data, error } = await supabase
+      .from('courses')
+      .insert(courseData)
+      .select()
+      .single();
+
+    if (error) throw error;
+    return data;
+  }
+
+  export async function updateCourse(id: string, updates: { name?: string; location?: string; par?: number }) {
+    const { data, error } = await supabase
+      .from('courses')
+      .update(updates)
+      .eq('id', id)
+      .select()
+      .single();
+
+    if (error) throw error;
+    return data;
+  }
+
+  // ===== PLAYER STATS FUNCTION =====
+
+  export async function getPlayerStats(userId: string, seasonId?: string) {
+    let query = supabase
+      .from('scores')
+      .select(`
+        id,
+        raw_score,
+        points,
+        bonus_points,
+        submitted_at,
+        notes,
+        games:game_id (
+          id,
+          name,
+          game_date,
+          season_id,
+          courses:course_id (
+            name,
+            par
+          )
+        )
+      `)
+      .eq('player_id', userId)
+      .order('submitted_at', { ascending: false });
+
+    if (seasonId) {
+      query = query.eq('games.season_id', seasonId);
+    }
+
+    const { data, error } = await query;
+    if (error) throw error;
+
+    const scores = (data || []).filter(s => s.games !== null);
+    return scores;
+  }
+
+  // ===== HEAD TO HEAD COMPARISON =====
+
+  export async function getHeadToHead(player1Id: string, player2Id: string, seasonId: string) {
+    // Get profiles
+    const { data: profiles, error: pError } = await supabase
+      .from('profiles')
+      .select('id, username, profile_image_url')
+      .in('id', [player1Id, player2Id]);
+
+    if (pError) throw pError;
+
+    const p1Profile = profiles?.find(p => p.id === player1Id);
+    const p2Profile = profiles?.find(p => p.id === player2Id);
+
+    // Get all scores for both players in the season
+    const { data: allScores, error: sError } = await supabase
+      .from('scores')
+      .select(`
+        id, player_id, raw_score, points, bonus_points,
+        games:game_id (id, name, game_date, season_id, courses:course_id (par))
+      `)
+      .in('player_id', [player1Id, player2Id])
+      .order('submitted_at', { ascending: true });
+
+    if (sError) throw sError;
+
+    const seasonScores = (allScores || []).filter(s => s.games?.season_id === seasonId);
+
+    // Group by game
+    const gameMap = new Map<string, { gameName: string; gameDate: string; p1Score?: number; p2Score?: number; p1Points?: number; p2Points?: number }>();
+
+    for (const score of seasonScores) {
+      if (!score.games) continue;
+      const gameId = score.games.id;
+      if (!gameMap.has(gameId)) {
+        gameMap.set(gameId, { gameName: score.games.name, gameDate: score.games.game_date });
+      }
+      const entry = gameMap.get(gameId)!;
+      if (score.player_id === player1Id) {
+        entry.p1Score = score.raw_score;
+        entry.p1Points = score.points + score.bonus_points;
+      } else {
+        entry.p2Score = score.raw_score;
+        entry.p2Points = score.points + score.bonus_points;
+      }
+    }
+
+    // Find shared games
+    const sharedGames: Array<{ gameName: string; gameDate: string; p1Score: number; p2Score: number; winner: 'p1' | 'p2' | 'tie' }> = [];
+    let p1Wins = 0, p2Wins = 0, ties = 0;
+
+    for (const [, game] of gameMap) {
+      if (game.p1Score !== undefined && game.p2Score !== undefined) {
+        const winner = game.p1Score < game.p2Score ? 'p1' : game.p1Score > game.p2Score ? 'p2' : 'tie';
+        if (winner === 'p1') p1Wins++;
+        else if (winner === 'p2') p2Wins++;
+        else ties++;
+        sharedGames.push({
+          gameName: game.gameName,
+          gameDate: game.gameDate,
+          p1Score: game.p1Score,
+          p2Score: game.p2Score,
+          winner,
+        });
+      }
+    }
+
+    // Compute stats per player
+    const p1Scores = seasonScores.filter(s => s.player_id === player1Id);
+    const p2Scores = seasonScores.filter(s => s.player_id === player2Id);
+
+    const calcStats = (scores: typeof p1Scores) => ({
+      gamesPlayed: scores.length,
+      avgScore: scores.length > 0 ? scores.reduce((sum, s) => sum + s.raw_score, 0) / scores.length : 0,
+      totalPoints: scores.reduce((sum, s) => sum + s.points + s.bonus_points, 0),
+      bestScore: scores.length > 0 ? Math.min(...scores.map(s => s.raw_score)) : null,
+    });
+
+    return {
+      player1: { username: p1Profile?.username || 'Unknown', profile_image_url: p1Profile?.profile_image_url || null, ...calcStats(p1Scores) },
+      player2: { username: p2Profile?.username || 'Unknown', profile_image_url: p2Profile?.profile_image_url || null, ...calcStats(p2Scores) },
+      sharedGames,
+      record: { p1Wins, p2Wins, ties },
+    };
+  }
+
+  // ===== ROUND RECAP =====
+
+  export async function getRoundRecap(gameId: string) {
+    const { data: game, error: gError } = await supabase
+      .from('games')
+      .select(`
+        id, name, game_date,
+        courses:course_id (name, par)
+      `)
+      .eq('id', gameId)
+      .single();
+
+    if (gError) throw gError;
+
+    const { data: scores, error: sError } = await supabase
+      .from('scores')
+      .select(`
+        id, raw_score, points, bonus_points, notes,
+        profiles!player_id (username, profile_image_url)
+      `)
+      .eq('game_id', gameId)
+      .order('raw_score', { ascending: true });
+
+    if (sError) throw sError;
+
+    return {
+      game: { name: game.name, game_date: game.game_date },
+      course: { name: game.courses.name, par: game.courses.par },
+      scores: (scores || []).map(s => ({
+        player: { username: s.profiles?.username || 'Unknown', profile_image_url: s.profiles?.profile_image_url || null },
+        score: s.raw_score,
+        points: s.points,
+        bonus_points: s.bonus_points,
+        notes: s.notes,
+      })),
+    };
+  }
+
+  export async function getUserActivityFeed(userId: string, limit = 10) {
+    // Get user's season IDs
+    const { data: participations, error: pError } = await supabase
+      .from('season_participants')
+      .select('season_id')
+      .eq('player_id', userId);
+
+    if (pError) throw pError;
+
+    const seasonIds = (participations || []).map(p => p.season_id);
+    if (seasonIds.length === 0) return [];
+
+    // Three parallel queries
+    const [scoresRes, gamesRes, achievementsRes] = await Promise.all([
+      // Recent scores from others in user's seasons
+      supabase
+        .from('scores')
+        .select(`
+          id, raw_score, submitted_at, player_id,
+          profiles!player_id (username),
+          games:game_id (name, season_id, courses:course_id (name))
+        `)
+        .neq('player_id', userId)
+        .order('submitted_at', { ascending: false })
+        .limit(20),
+      // Recent games created in user's seasons
+      supabase
+        .from('games')
+        .select(`
+          id, name, game_date, season_id,
+          profiles:created_by (username),
+          courses:course_id (name)
+        `)
+        .in('season_id', seasonIds)
+        .order('game_date', { ascending: false })
+        .limit(10),
+      // Recent achievements from others
+      supabase
+        .from('user_achievements')
+        .select(`
+          id, earned_at, user_id, season_id,
+          profiles:user_id (username),
+          achievements:achievement_id (name)
+        `)
+        .neq('user_id', userId)
+        .order('earned_at', { ascending: false })
+        .limit(10),
+    ]);
+
+    type FeedItem = {
+      type: 'score' | 'game' | 'achievement';
+      timestamp: string;
+      playerName: string;
+      details: string;
+    };
+
+    const items: FeedItem[] = [];
+
+    // Filter scores to user's seasons and map
+    for (const s of scoresRes.data || []) {
+      if (s.games && seasonIds.includes(s.games.season_id)) {
+        items.push({
+          type: 'score',
+          timestamp: s.submitted_at,
+          playerName: s.profiles?.username ?? 'Unknown',
+          details: `shot ${s.raw_score} at ${s.games.courses?.name ?? 'Unknown Course'}`,
+        });
+      }
+    }
+
+    for (const g of gamesRes.data || []) {
+      items.push({
+        type: 'game',
+        timestamp: g.game_date,
+        playerName: g.profiles?.username ?? 'Admin',
+        details: `New round: ${g.name} at ${g.courses?.name ?? 'Unknown Course'}`,
+      });
+    }
+
+    for (const a of achievementsRes.data || []) {
+      if (a.season_id && seasonIds.includes(a.season_id)) {
+        items.push({
+          type: 'achievement',
+          timestamp: a.earned_at,
+          playerName: a.profiles?.username ?? 'Unknown',
+          details: `earned ${a.achievements?.name ?? 'an achievement'}`,
+        });
+      }
+    }
+
+    items.sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime());
+    return items.slice(0, limit);
+  }
+
+// Subscribe to real-time score changes for a season
+export function subscribeToScoreChanges(
+  seasonId: string,
+  callback: () => void
+) {
+  const channel = supabase
+    .channel(`scores-season-${seasonId}`)
+    .on(
+      'postgres_changes',
+      { event: '*', schema: 'public', table: 'scores' },
+      () => callback()
+    )
+    .subscribe()
+
+  return () => {
+    supabase.removeChannel(channel)
+  }
+}
