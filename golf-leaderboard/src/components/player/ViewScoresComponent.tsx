@@ -1,6 +1,6 @@
 'use client'
 
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useUser } from '@/hooks/useUser';
 import {
   Card,
@@ -27,10 +27,11 @@ import {
   CollapsibleTrigger,
 } from "@/components/ui/collapsible";
 import { ArrowLeft, AlertCircle, ChevronDown, Calendar, Flag, ClipboardCheck } from 'lucide-react';
-import { 
-  getGameScores, 
+import {
+  getGameScores,
   validateRoundCode,
 } from '@/lib/supabase/client';
+import { formatDate } from '@/lib/utils';
 
 // Types
 interface ScoreWithPlayer {
@@ -68,7 +69,6 @@ export default function ViewScoresComponent({ onReturn }: { onReturn: () => void
   const [formattedDates, setFormattedDates] = useState<Record<string, string>>({});
   const [expandedNotes, setExpandedNotes] = useState<string | null>(null);
   const [isMobile, setIsMobile] = useState(false);
-  const errorRef = useRef<HTMLDivElement>(null);
 
   // Check viewport size on mount and window resize
   useEffect(() => {
@@ -97,7 +97,6 @@ export default function ViewScoresComponent({ onReturn }: { onReturn: () => void
   const validateCode = async () => {
     // Standardize the input format
     const formattedCode = String(roundCode || '').trim().toUpperCase();
-    console.log("Validating code:", formattedCode);
     
     if (!formattedCode || formattedCode.length < 3) {
       if (formattedCode && formattedCode.length > 0 && formattedCode.length < 3) {
@@ -143,34 +142,22 @@ export default function ViewScoresComponent({ onReturn }: { onReturn: () => void
         }));
       
       setGameScores(validScores);
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    } catch (error: any) {
+    } catch (error: unknown) {
+      const err = error as { message?: string; status?: number; details?: string };
       if (process.env.NODE_ENV !== 'production') {
-        console.error("Round code validation error:", {
-          error,
-          message: error.message || "No error message",
-          status: error.status,
-          details: error.details || error.error_description,
-        });
+        console.error("Round code validation error:", error);
       }
-      
+
       // Check for specific error types
-      if (error.message?.includes("no rows") || 
-          error.message?.includes("multiple (or no) rows") ||
-          error.details?.includes("contains 0 rows")) {
+      if (err.message?.includes("no rows") ||
+          err.message?.includes("multiple (or no) rows") ||
+          err.details?.includes("contains 0 rows")) {
         setCodeError("Round code not found. Please check and try again");
-      } else if (error.status === 403) {
+      } else if (err.status === 403) {
         setCodeError("You don't have permission to access this round");
       } else {
         setCodeError("Invalid round code. Please check and try again");
       }
-      
-      // Force DOM update for reliability
-      setTimeout(() => {
-        if (errorRef.current) {
-          errorRef.current.style.display = 'flex';
-        }
-      }, 50);
       
       // Clear any previously set game details and scores
       setSelectedGame(null);
@@ -194,24 +181,16 @@ export default function ViewScoresComponent({ onReturn }: { onReturn: () => void
     if (selectedGame) {
       setFormattedDates(prev => ({
         ...prev,
-        gameDate: new Date(selectedGame.game_date).toLocaleDateString('en-US', {
-          year: 'numeric',
-          month: 'short',
-          day: 'numeric',
-        })
+        gameDate: formatDate(selectedGame.game_date)
       }));
     }
-    
+
     // Format all score dates
     const scoreDates: Record<string, string> = {};
     gameScores.forEach(score => {
-      scoreDates[score.id] = new Date(score.submitted_at).toLocaleDateString('en-US', {
-        year: 'numeric',
-        month: 'short',
-        day: 'numeric',
-      });
+      scoreDates[score.id] = formatDate(score.submitted_at);
     });
-    
+
     setFormattedDates(prev => ({
       ...prev,
       ...scoreDates
@@ -321,8 +300,7 @@ export default function ViewScoresComponent({ onReturn }: { onReturn: () => void
                   onClick={() => {
                     // Format the code before validation
                     const formattedCode = String(roundCode || '').trim().toUpperCase();
-                    setRoundCode(formattedCode); // Update the state with formatted code
-                    console.log("Button clicked with code:", formattedCode);
+                    setRoundCode(formattedCode);
                     validateCode();
                   }}
                   disabled={isValidatingCode || !roundCode}
@@ -333,8 +311,7 @@ export default function ViewScoresComponent({ onReturn }: { onReturn: () => void
               </div>
               
               {/* Error message display */}
-              <div 
-                ref={errorRef}
+              <div
                 className="flex items-center text-sm text-red-500 font-medium mt-2"
                 style={{ display: codeError ? 'flex' : 'none' }}
               >

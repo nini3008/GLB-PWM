@@ -29,6 +29,7 @@ import {
 } from "@/components/ui/select";
 import { getUserRecentScores, getUserSeasonScores, getUserSeasons, getUserAchievements, getUserSeasonRank, updatePlayerHandicap } from '@/lib/supabase/client';
 import { useAuth } from '@/context/AuthContext';
+import { formatDate } from '@/lib/utils';
 import { checkAndAwardAchievements } from '@/lib/utils/achievements';
 import BadgesDisplay from './BadgesDisplay';
 
@@ -122,11 +123,7 @@ export default function ProfileForm({ onReturn }: { onReturn: () => void }) {
       if (profile.created_at) {
         setFormattedDates(prev => ({
           ...prev,
-          memberSince: new Date(profile.created_at).toLocaleDateString('en-US', {
-            year: 'numeric',
-            month: 'short',
-            day: 'numeric',
-          })
+          memberSince: formatDate(profile.created_at)
         }));
       }
     }
@@ -195,11 +192,7 @@ export default function ProfileForm({ onReturn }: { onReturn: () => void }) {
         // Format game dates for all scores
         const gameDates: Record<string, string> = {};
         scores.forEach((score: RecentScore) => {
-          gameDates[score.id] = new Date(score.games.game_date).toLocaleDateString('en-US', {
-            year: 'numeric',
-            month: 'short',
-            day: 'numeric',
-          });
+          gameDates[score.id] = formatDate(score.games.game_date);
         });
 
         setFormattedDates(prev => ({

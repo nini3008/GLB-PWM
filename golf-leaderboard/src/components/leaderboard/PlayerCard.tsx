@@ -12,6 +12,7 @@ import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { getPlayerCardData } from '@/lib/supabase/client';
+import { formatDate } from '@/lib/utils';
 import BadgesDisplay from '@/components/player/BadgesDisplay';
 
 interface PlayerCardProps {
@@ -106,11 +107,6 @@ export function PlayerCard({ playerId, isOpen, onClose }: PlayerCardProps) {
       return firstName;
     }
     return username;
-  };
-
-  const formatDate = (dateString: string) => {
-    const date = new Date(dateString);
-    return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
   };
 
   return (

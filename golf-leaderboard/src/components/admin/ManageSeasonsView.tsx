@@ -21,6 +21,7 @@ import {
   Trophy
 } from 'lucide-react';
 import { supabase } from '@/lib/supabase/client';
+import { formatDate } from '@/lib/utils';
 import { Skeleton } from '@/components/ui/skeleton';
 
 interface Season {
@@ -121,15 +122,6 @@ export default function ManageSeasonsView({ onReturn }: ManageSeasonsViewProps) 
     } finally {
       setUpdatingSeasonId(null);
     }
-  };
-
-  // Format date
-  const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleDateString('en-US', {
-      year: 'numeric',
-      month: 'short',
-      day: 'numeric',
-    });
   };
 
   return (

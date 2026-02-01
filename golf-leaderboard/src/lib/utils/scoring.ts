@@ -104,19 +104,14 @@ export function updateBonusPoints(allScoresInRound: {
     // Find the lowest score in the round
     const lowestScore = Math.min(...allScoresInRound.map(score => score.rawScore));
     
-    console.log("Lowest score in round:", lowestScore);
-    
     // Determine which players should have bonus points
     const updates = allScoresInRound.map(score => {
       const shouldHaveBonus = score.rawScore === lowestScore; // STRICT EQUALITY
-      console.log(`Player ${score.playerId}: score=${score.rawScore}, lowest=${lowestScore}, shouldHaveBonus=${shouldHaveBonus}`);
       return {
         playerId: score.playerId,
         shouldHaveBonus
       };
     });
-    
-    console.log("Final bonus updates:", updates);
     return updates;
   }
   /**

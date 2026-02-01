@@ -4,6 +4,7 @@ import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import * as LucideIcons from 'lucide-react';
+import { formatDate } from '@/lib/utils';
 
 interface Achievement {
   id: string;
@@ -168,11 +169,7 @@ export default function BadgesDisplay({ userAchievements, isLoading }: BadgesDis
                         </p>
                         <div className="flex items-center justify-between text-xs text-gray-500">
                           <span>
-                            {new Date(ua.earned_at).toLocaleDateString('en-US', {
-                              month: 'short',
-                              day: 'numeric',
-                              year: 'numeric'
-                            })}
+                            {formatDate(ua.earned_at)}
                           </span>
                           {ua.seasons && (
                             <span className="text-xs bg-white/50 px-2 py-0.5 rounded">

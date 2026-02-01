@@ -1,7 +1,7 @@
 // src/components/admin/ManageScoresView.tsx
 'use client'
 
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { z } from 'zod';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -43,13 +43,13 @@ import {
   CollapsibleTrigger,
 } from "@/components/ui/collapsible";
 import { ArrowLeft, Edit, Trash2, Save, AlertTriangle, AlertCircle, ChevronDown, Calendar, Flag, ClipboardCheck } from 'lucide-react';
-import { 
-  getGameScores, 
+import {
+  getGameScores,
   updateScore,
-  getGameScores as refreshGameScores,
   validateRoundCode,
   deleteScore
 } from '@/lib/supabase/client';
+import { formatDate } from '@/lib/utils';
 import { calculatePoints, updateBonusPoints } from '@/lib/utils/scoring';
 
 // Form validation schema
@@ -102,7 +102,6 @@ export default function ManageScoresView({ onReturn }: { onReturn: () => void })
   const [formattedDates, setFormattedDates] = useState<Record<string, string>>({});
   const [expandedNotes, setExpandedNotes] = useState<string | null>(null);
   const [isMobile, setIsMobile] = useState(false);
-  const errorRef = useRef<HTMLDivElement>(null);
 
   // Check viewport size on mount and window resize
   useEffect(() => {
@@ -184,34 +183,22 @@ export default function ManageScoresView({ onReturn }: { onReturn: () => void })
       toast.success("Round loaded", {
         description: `Viewing scores for ${game.name} at ${game.courses.name}`,
       });
-       // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    } catch (error: any) {
+    } catch (error: unknown) {
+      const err = error as { message?: string; status?: number; details?: string; error_description?: string };
       if (process.env.NODE_ENV !== 'production') {
-        console.error("Round code validation error:", {
-          error,
-          message: error.message || "No error message",
-          status: error.status,
-          details: error.details || error.error_description,
-        });
+        console.error("Round code validation error:", error);
       }
-      
+
       // Check for specific error types
-      if (error.message?.includes("no rows") || 
-          error.message?.includes("multiple (or no) rows") ||
-          error.details?.includes("contains 0 rows")) {
+      if (err.message?.includes("no rows") ||
+          err.message?.includes("multiple (or no) rows") ||
+          err.details?.includes("contains 0 rows")) {
         setCodeError("Round code not found. Please check and try again");
-      } else if (error.status === 403) {
+      } else if (err.status === 403) {
         setCodeError("You don't have permission to access this round");
       } else {
         setCodeError("Invalid round code. Please check and try again");
       }
-      
-      // Force DOM update for reliability
-      setTimeout(() => {
-        if (errorRef.current) {
-          errorRef.current.style.display = 'flex';
-        }
-      }, 50);
       
       toast.error("Invalid round code", {
         description: "Please check the code and try again.",
@@ -259,7 +246,7 @@ export default function ManageScoresView({ onReturn }: { onReturn: () => void })
       });
       
       // Refresh all scores for this game
-      const updatedScores = await refreshGameScores(selectedGame.id);
+      const updatedScores = await getGameScores(selectedGame.id);
       
       // Transform the updated scores
       const validUpdatedScores = updatedScores
@@ -303,7 +290,7 @@ export default function ManageScoresView({ onReturn }: { onReturn: () => void })
       }
       
       // Refresh scores again after all updates
-      const finalScores = await refreshGameScores(selectedGame.id);
+      const finalScores = await getGameScores(selectedGame.id);
       
       // Transform the final scores
       const validFinalScores = finalScores
@@ -332,7 +319,7 @@ export default function ManageScoresView({ onReturn }: { onReturn: () => void })
         description: "The score and points have been updated successfully.",
       });
     } catch (error) {
-      console.log(error);
+      console.error(error);
       toast.error("Error updating score", {
         description: "Please try again.",
       });
@@ -355,7 +342,7 @@ export default function ManageScoresView({ onReturn }: { onReturn: () => void })
       await deleteScore(showDeleteConfirm);
       
       // Refresh scores
-      const updatedScores = await refreshGameScores(selectedGame.id);
+      const updatedScores = await getGameScores(selectedGame.id);
       
       // Transform the updated scores
       const validUpdatedScores = updatedScores
@@ -383,7 +370,7 @@ export default function ManageScoresView({ onReturn }: { onReturn: () => void })
         description: "The score has been removed from the leaderboard.",
       });
     } catch (error) {
-      console.log(error);
+      console.error(error);
       toast.error("Error deleting score", {
         description: "Please try again.",
       });
@@ -406,24 +393,16 @@ export default function ManageScoresView({ onReturn }: { onReturn: () => void })
     if (selectedGame) {
       setFormattedDates(prev => ({
         ...prev,
-        gameDate: new Date(selectedGame.game_date).toLocaleDateString('en-US', {
-          year: 'numeric',
-          month: 'short',
-          day: 'numeric',
-        })
+        gameDate: formatDate(selectedGame.game_date)
       }));
     }
-    
+
     // Format all score dates
     const scoreDates: Record<string, string> = {};
     gameScores.forEach(score => {
-      scoreDates[score.id] = new Date(score.submitted_at).toLocaleDateString('en-US', {
-        year: 'numeric',
-        month: 'short',
-        day: 'numeric',
-      });
+      scoreDates[score.id] = formatDate(score.submitted_at);
     });
-    
+
     setFormattedDates(prev => ({
       ...prev,
       ...scoreDates
@@ -598,8 +577,7 @@ export default function ManageScoresView({ onReturn }: { onReturn: () => void })
               </div>
               
               {/* Error message display */}
-              <div 
-                ref={errorRef}
+              <div
                 className="flex items-center text-sm text-red-500 font-medium mt-2"
                 style={{ display: codeError ? 'flex' : 'none' }}
               >

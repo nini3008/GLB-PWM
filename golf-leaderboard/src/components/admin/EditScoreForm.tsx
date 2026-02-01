@@ -1,6 +1,6 @@
 'use client'
 // src/components/admin/EditScoreForm.tsx
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { z } from 'zod';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -36,12 +36,12 @@ import {
   TableRow,
 } from '@/components/ui/table';
 import { ArrowLeft, Edit, Trash2, Save, AlertTriangle, AlertCircle } from 'lucide-react';
-import { 
-  getGameScores, 
+import {
+  getGameScores,
   updateScore,
-  getGameScores as refreshGameScores,
   validateRoundCode,
 } from '@/lib/supabase/client';
+import { formatDate } from '@/lib/utils';
 import { calculatePoints, updateBonusPoints } from '@/lib/utils/scoring';
 
 // Form validation schema
@@ -91,7 +91,6 @@ export function AdminScoreManagement({ onReturn }: { onReturn: () => void }) {
   const [roundCode, setRoundCode] = useState('');
   const [isValidatingCode, setIsValidatingCode] = useState(false);
   const [codeError, setCodeError] = useState<string | null>(null);
-  const errorRef = useRef<HTMLDivElement>(null);
   const [formattedDates, setFormattedDates] = useState<Record<string, string>>({});
 
   // Format date only on the client side
@@ -99,24 +98,16 @@ useEffect(() => {
     if (selectedGame) {
       setFormattedDates(prev => ({
         ...prev,
-        gameDate: new Date(selectedGame.game_date).toLocaleDateString('en-US', {
-          year: 'numeric',
-          month: 'short',
-          day: 'numeric',
-        })
+        gameDate: formatDate(selectedGame.game_date)
       }));
     }
-    
+
     // Format all score dates
     const scoreDates: Record<string, string> = {};
     gameScores.forEach(score => {
-      scoreDates[score.id] = new Date(score.submitted_at).toLocaleDateString('en-US', {
-        year: 'numeric',
-        month: 'short',
-        day: 'numeric',
-      });
+      scoreDates[score.id] = formatDate(score.submitted_at);
     });
-    
+
     setFormattedDates(prev => ({
       ...prev,
       ...scoreDates
@@ -134,36 +125,28 @@ useEffect(() => {
 
   // Handle round code validation
   const validateCode = async () => {
-    console.log("Validating code:", roundCode);
     // Always reset error state at beginning
     setCodeError(null);
-    
+
     if (!roundCode || roundCode.length < 3) {
-      console.log("Code too short or empty");
       if (roundCode && roundCode.length > 0) {
-        const errorMsg = "Round code must be at least 3 characters";
-        console.log("Setting error:", errorMsg);
-        setCodeError(errorMsg);
+        setCodeError("Round code must be at least 3 characters");
         toast.error("Round code too short");
       }
       return;
     }
-    
+
     if (!user) {
-        const errorMsg = "You must be logged in to verify a round code";
-        console.log("Setting error:", errorMsg);
-        setCodeError(errorMsg);
+        setCodeError("You must be logged in to verify a round code");
         return;
     }
-  
+
     setIsValidatingCode(true);
     try {
-      console.log("Calling validateRoundCode API");
       // Validate the round code and get game details
       const game = await validateRoundCode(roundCode);
-      console.log("Code validated successfully:", game);
       setSelectedGame(game);
-      
+
       // Load scores for this game
       const rawScores = await getGameScores(game.id);
       
@@ -189,26 +172,15 @@ useEffect(() => {
       toast.success("Round loaded", {
         description: `Viewing scores for ${game.name} at ${game.courses.name}`,
       });
-       // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    } catch (error: any) {
+    } catch (error: unknown) {
+      const err = error as { status?: number; message?: string };
       console.error('Round code validation error:', error);
-      const errorMsg = "Invalid round code. Please check and try again.";
-      console.log("Setting error after catch:", errorMsg);
-      setCodeError(errorMsg);
-      
-      // Force DOM update for reliability
-      setTimeout(() => {
-        if (errorRef.current) {
-          console.log("Forcing error display via DOM");
-          errorRef.current.textContent = "⚠️ " + errorMsg;
-          errorRef.current.style.display = 'flex';
-        }
-      }, 50);
-      
+      setCodeError("Invalid round code. Please check and try again.");
+
       // Provide more detailed error messages based on the error type
-      if (error.status === 406 || error.message?.includes("not found")) {
+      if (err.status === 406 || err.message?.includes("not found")) {
         toast.error("Invalid round code");
-      } else if (error.status === 403) {
+      } else if (err.status === 403) {
         toast.error("Access denied", {
           description: "You don't have permission to view this round."
         });
@@ -260,7 +232,7 @@ useEffect(() => {
       });
       
       // Refresh all scores for this game
-      const updatedScores = await refreshGameScores(selectedGame.id);
+      const updatedScores = await getGameScores(selectedGame.id);
       
       // Recalculate bonus points for all players in this round
       const playerBonusUpdates = updateBonusPoints(
@@ -287,7 +259,7 @@ useEffect(() => {
       }
       
       // Refresh scores again after all updates
-      const finalScores = await refreshGameScores(selectedGame.id);
+      const finalScores = await getGameScores(selectedGame.id);
       setGameScores(finalScores);
       
       // Reset editing state
@@ -298,8 +270,8 @@ useEffect(() => {
         description: "The score and points have been updated successfully.",
       });
     } catch (error) {
-        console.error(error)
-      toast.error("Error updating score",{
+        console.error(error);
+      toast.error("Error updating score", {
         description: "Please try again.",
       });
     } finally {
@@ -322,7 +294,7 @@ useEffect(() => {
       // await deleteScore(showDeleteConfirm);
       
       // Refresh scores
-      const updatedScores = await refreshGameScores(selectedGame.id);
+      const updatedScores = await getGameScores(selectedGame.id);
       setGameScores(updatedScores);
       
       // Reset state
@@ -332,7 +304,7 @@ useEffect(() => {
         description: "The score has been removed from the leaderboard.",
       });
     } catch (error) {
-      console.error(error)
+      console.error(error);
       toast.error("Error deleting score", {
         description: "Please try again.",
       });
@@ -379,9 +351,8 @@ useEffect(() => {
                 </Button>
               </div>
               
-              {/* Error message with ref for direct manipulation if needed */}
-              <div 
-                ref={errorRef}
+              {/* Error message */}
+              <div
                 className="flex items-center text-sm text-red-500 font-medium mt-2"
                 style={{ display: codeError ? 'flex' : 'none' }}
               >
