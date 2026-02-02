@@ -4,6 +4,7 @@ import { useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { useAuth } from '@/context/AuthContext'
 import MainLayout from '@/components/layout/MainLayout'
+import RouteProgress from '@/components/ui/RouteProgress'
 
 export default function AppLayout({ children }: { children: React.ReactNode }) {
   const { user, isLoading } = useAuth()
@@ -27,5 +28,5 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
     return null
   }
 
-  return <MainLayout>{children}</MainLayout>
+  return <><RouteProgress /><MainLayout>{children}</MainLayout></>
 }

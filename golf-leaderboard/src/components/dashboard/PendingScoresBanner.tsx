@@ -14,13 +14,33 @@ export default function PendingScoresBanner({ userId, onNavigateToEnterScore }: 
   const [games, setGames] = useState<Awaited<ReturnType<typeof getUserPendingGames>>>([]);
   const [loading, setLoading] = useState(true);
   const [expanded, setExpanded] = useState(false);
+  const [error, setError] = useState(false);
 
-  useEffect(() => {
+  const fetchGames = () => {
+    setError(false);
+    setLoading(true);
     getUserPendingGames(userId)
       .then(setGames)
-      .catch(err => console.error('Failed to load pending games:', err))
+      .catch(err => {
+        console.error('Failed to load pending games:', err);
+        setError(true);
+      })
       .finally(() => setLoading(false));
+  };
+
+  useEffect(() => {
+    fetchGames();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [userId]);
+
+  if (error) {
+    return (
+      <div className="bg-red-50 border border-red-200 rounded-xl p-4 flex items-center justify-between">
+        <span className="text-sm text-red-700">Failed to load pending scores</span>
+        <button onClick={fetchGames} className="text-sm font-medium text-red-700 underline hover:no-underline">Retry</button>
+      </div>
+    );
+  }
 
   if (loading || games.length === 0) return null;
 

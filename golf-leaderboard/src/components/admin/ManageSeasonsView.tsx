@@ -20,6 +20,16 @@ import {
   Users,
   Trophy
 } from 'lucide-react';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
 import { supabase } from '@/lib/supabase/client';
 import { useNavigation } from '@/hooks/useNavigation';
 import { formatDate } from '@/lib/utils';
@@ -44,6 +54,7 @@ export default function ManageSeasonsView() {
   const [updatingSeasonId, setUpdatingSeasonId] = useState<string | null>(null);
   const [summarySeasonId, setSummarySeasonId] = useState<string | null>(null);
   const [summarySeasonName, setSummarySeasonName] = useState('');
+  const [deactivateTarget, setDeactivateTarget] = useState<{ id: string; name: string } | null>(null);
 
   // Fetch all seasons
   useEffect(() => {
@@ -255,7 +266,13 @@ export default function ManageSeasonsView() {
                         </Button>
                       )}
                       <Button
-                        onClick={() => toggleSeasonStatus(season.id, season.is_active)}
+                        onClick={() => {
+                          if (season.is_active) {
+                            setDeactivateTarget({ id: season.id, name: season.name });
+                          } else {
+                            toggleSeasonStatus(season.id, season.is_active);
+                          }
+                        }}
                         disabled={updatingSeasonId === season.id}
                         variant={season.is_active ? 'outline' : 'default'}
                         className={
@@ -295,6 +312,26 @@ export default function ManageSeasonsView() {
           )}
         </CardContent>
       </Card>
+
+      <AlertDialog open={!!deactivateTarget} onOpenChange={(open) => { if (!open) setDeactivateTarget(null); }}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Deactivate &quot;{deactivateTarget?.name}&quot;?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This will archive the season. Players can still view data but can&apos;t submit new scores.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction onClick={() => {
+              if (deactivateTarget) {
+                toggleSeasonStatus(deactivateTarget.id, true);
+                setDeactivateTarget(null);
+              }
+            }}>Deactivate</AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
 
       {summarySeasonId && (
         <SeasonSummary

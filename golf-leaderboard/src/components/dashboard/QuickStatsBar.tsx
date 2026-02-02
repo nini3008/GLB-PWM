@@ -12,13 +12,33 @@ interface QuickStatsBarProps {
 export default function QuickStatsBar({ userId }: QuickStatsBarProps) {
   const [stats, setStats] = useState<Awaited<ReturnType<typeof getUserCurrentSeasonStats>>>(undefined as unknown as null);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(false);
 
-  useEffect(() => {
+  const fetchStats = () => {
+    setError(false);
+    setLoading(true);
     getUserCurrentSeasonStats(userId)
       .then(setStats)
-      .catch(err => console.error('Failed to load stats:', err))
+      .catch(err => {
+        console.error('Failed to load stats:', err);
+        setError(true);
+      })
       .finally(() => setLoading(false));
+  };
+
+  useEffect(() => {
+    fetchStats();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [userId]);
+
+  if (error) {
+    return (
+      <div className="bg-red-50 border border-red-200 rounded-xl p-4 flex items-center justify-between">
+        <span className="text-sm text-red-700">Failed to load stats</span>
+        <button onClick={fetchStats} className="text-sm font-medium text-red-700 underline hover:no-underline">Retry</button>
+      </div>
+    );
+  }
 
   if (loading) {
     return (

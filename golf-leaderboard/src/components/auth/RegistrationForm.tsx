@@ -1,6 +1,6 @@
 'use client'
 
-import React, { useState } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useAuth } from '@/context/AuthContext';
 import { useNavigation } from '@/hooks/useNavigation';
 import { User, CheckCircle } from 'lucide-react';
@@ -15,8 +15,26 @@ export default function RegisterForm() {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [registrationSuccess, setRegistrationSuccess] = useState(false);
-  
+  const [countdown, setCountdown] = useState(3);
+  const countdownRef = useRef<NodeJS.Timeout>(undefined);
+
   const { signUp } = useAuth();
+
+  useEffect(() => {
+    if (!registrationSuccess) return;
+    countdownRef.current = setInterval(() => {
+      setCountdown(prev => {
+        if (prev <= 1) {
+          clearInterval(countdownRef.current);
+          nav.goToLogin();
+          return 0;
+        }
+        return prev - 1;
+      });
+    }, 1000);
+    return () => clearInterval(countdownRef.current);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [registrationSuccess]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -55,7 +73,7 @@ export default function RegisterForm() {
         <p className="text-gray-600 mb-6">
           Thank you for registering! Please check your email to confirm your account.
         </p>
-        <p className="text-gray-500 text-sm mb-2">You can now proceed to login.</p>
+        <p className="text-gray-500 text-sm mb-2">Redirecting to login in {countdown}s...</p>
         <button
           onClick={nav.goToLogin}
           className="w-full bg-green-600 hover:bg-green-700 text-white py-2 rounded font-bold transition duration-200"

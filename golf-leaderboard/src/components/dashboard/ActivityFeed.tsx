@@ -19,11 +19,17 @@ const borderColors: Record<string, string> = {
 export default function ActivityFeed({ userId }: ActivityFeedProps) {
   const [items, setItems] = useState<Awaited<ReturnType<typeof getUserActivityFeed>>>([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(false);
 
   const fetchActivity = () => {
+    setError(false);
+    setLoading(true);
     getUserActivityFeed(userId)
       .then(setItems)
-      .catch(err => console.error('Failed to load activity feed:', err))
+      .catch(err => {
+        console.error('Failed to load activity feed:', err);
+        setError(true);
+      })
       .finally(() => setLoading(false));
   };
 
@@ -46,7 +52,12 @@ export default function ActivityFeed({ userId }: ActivityFeedProps) {
         <h3 className="text-lg font-bold text-gray-800">Recent Activity</h3>
       </div>
 
-      {loading ? (
+      {error ? (
+        <div className="bg-red-50 border border-red-200 rounded-lg p-4 flex items-center justify-between">
+          <span className="text-sm text-red-700">Failed to load activity</span>
+          <button onClick={fetchActivity} className="text-sm font-medium text-red-700 underline hover:no-underline">Retry</button>
+        </div>
+      ) : loading ? (
         <div className="space-y-3">
           {Array.from({ length: 4 }).map((_, i) => (
             <div key={i} className="flex items-center gap-3">

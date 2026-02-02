@@ -3,6 +3,7 @@
 import { useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { useAuth } from '@/context/AuthContext'
+import RouteProgress from '@/components/ui/RouteProgress'
 
 export default function AuthLayout({ children }: { children: React.ReactNode }) {
   const { user, isLoading } = useAuth()
@@ -16,8 +17,11 @@ export default function AuthLayout({ children }: { children: React.ReactNode }) 
   }, [user, isLoading, router])
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-green-50 to-white flex items-center justify-center p-4">
-      {children}
-    </div>
+    <>
+      <RouteProgress />
+      <div className="min-h-screen bg-gradient-to-br from-green-50 to-white flex items-center justify-center p-4">
+        {children}
+      </div>
+    </>
   )
 }
