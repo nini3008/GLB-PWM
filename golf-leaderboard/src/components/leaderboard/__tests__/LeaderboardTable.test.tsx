@@ -30,6 +30,7 @@ jest.mock('@/lib/supabase/client', () => ({
   },
   getSeasonLeaderboard: jest.fn(),
   isUserAdmin: jest.fn(),
+  subscribeToScoreChanges: jest.fn(() => jest.fn()), // Returns unsubscribe function
 }))
 
 // Mock the PlayerCard component to avoid testing it in LeaderboardTable tests
@@ -45,18 +46,20 @@ jest.mock('../PlayerCard', () => ({
 }))
 
 describe('LeaderboardTable Component', () => {
-  const mockOnReturn = jest.fn()
   let getSeasonLeaderboard: jest.Mock
   let isUserAdmin: jest.Mock
+  let subscribeToScoreChanges: jest.Mock
 
   beforeEach(() => {
     jest.clearAllMocks()
     getSeasonLeaderboard = supabaseClient.getSeasonLeaderboard as jest.Mock
     isUserAdmin = supabaseClient.isUserAdmin as jest.Mock
+    subscribeToScoreChanges = supabaseClient.subscribeToScoreChanges as jest.Mock
 
     // Default mocks
     getSeasonLeaderboard.mockResolvedValue(mockLeaderboardData)
     isUserAdmin.mockResolvedValue(false)
+    subscribeToScoreChanges.mockReturnValue(jest.fn()) // Returns unsubscribe function
 
     // Mock window.innerWidth for responsive tests
     Object.defineProperty(window, 'innerWidth', {
@@ -69,7 +72,7 @@ describe('LeaderboardTable Component', () => {
   describe('Basic Rendering', () => {
     it('should render the leaderboard title and description', async () => {
       render(
-        <LeaderboardTable onReturn={mockOnReturn} />,
+        <LeaderboardTable />,
         { authContext: { user: mockUser, profile: mockProfile } }
       )
 
@@ -79,7 +82,7 @@ describe('LeaderboardTable Component', () => {
 
     it('should render the back button', () => {
       render(
-        <LeaderboardTable onReturn={mockOnReturn} />,
+        <LeaderboardTable />,
         { authContext: { user: mockUser, profile: mockProfile } }
       )
 
@@ -87,24 +90,36 @@ describe('LeaderboardTable Component', () => {
       expect(backButton).toBeInTheDocument()
     })
 
-    it('should call onReturn when back button is clicked', async () => {
+    it('should call navigation when back button is clicked', async () => {
+      const mockGoToDashboard = jest.fn()
+
+      // Mock the useNavigation hook to return our mock function
+      // eslint-disable-next-line
+      const useNavigation = require('@/hooks/useNavigation').useNavigation
+      useNavigation.mockReturnValue({
+        goToDashboard: mockGoToDashboard,
+        goToLeaderboard: jest.fn(),
+        goToEnterScore: jest.fn(),
+        // ... other navigation functions can be mocked as needed
+      })
+
       const user = userEvent.setup()
       render(
-        <LeaderboardTable onReturn={mockOnReturn} />,
+        <LeaderboardTable />,
         { authContext: { user: mockUser, profile: mockProfile } }
       )
 
       const backButton = screen.getByRole('button', { name: /back/i })
       await user.click(backButton)
 
-      expect(mockOnReturn).toHaveBeenCalledTimes(1)
+      expect(mockGoToDashboard).toHaveBeenCalledTimes(1)
     })
   })
 
   describe('Season Selection', () => {
     it('should render a season selector', async () => {
       render(
-        <LeaderboardTable onReturn={mockOnReturn} />,
+        <LeaderboardTable />,
         { authContext: { user: mockUser, profile: mockProfile } }
       )
 
@@ -115,7 +130,7 @@ describe('LeaderboardTable Component', () => {
 
     it('should select the first season by default when no seasonId is provided', async () => {
       render(
-        <LeaderboardTable onReturn={mockOnReturn} />,
+        <LeaderboardTable />,
         { authContext: { user: mockUser, profile: mockProfile } }
       )
 
@@ -126,7 +141,7 @@ describe('LeaderboardTable Component', () => {
 
     it('should use provided seasonId when passed as prop', async () => {
       render(
-        <LeaderboardTable seasonId="season-2" onReturn={mockOnReturn} />,
+        <LeaderboardTable seasonId="season-2" />,
         { authContext: { user: mockUser, profile: mockProfile } }
       )
 
@@ -143,7 +158,7 @@ describe('LeaderboardTable Component', () => {
   describe('Player Data Display', () => {
     it('should display all player data correctly in desktop view', async () => {
       render(
-        <LeaderboardTable onReturn={mockOnReturn} />,
+        <LeaderboardTable />,
         { authContext: { user: mockUser, profile: mockProfile } }
       )
 
@@ -164,7 +179,7 @@ describe('LeaderboardTable Component', () => {
 
     it('should display player usernames with proper capitalization', async () => {
       render(
-        <LeaderboardTable onReturn={mockOnReturn} />,
+        <LeaderboardTable />,
         { authContext: { user: mockUser, profile: mockProfile } }
       )
 
@@ -180,7 +195,7 @@ describe('LeaderboardTable Component', () => {
   describe('Ranking and Sorting', () => {
     it('should display players sorted by total_points in descending order', async () => {
       render(
-        <LeaderboardTable onReturn={mockOnReturn} />,
+        <LeaderboardTable />,
         { authContext: { user: mockUser, profile: mockProfile } }
       )
 
@@ -202,7 +217,7 @@ describe('LeaderboardTable Component', () => {
 
     it('should display trophy icon for 1st place', async () => {
       render(
-        <LeaderboardTable onReturn={mockOnReturn} />,
+        <LeaderboardTable />,
         { authContext: { user: mockUser, profile: mockProfile } }
       )
 
@@ -218,7 +233,7 @@ describe('LeaderboardTable Component', () => {
 
     it('should display medal icons for 2nd and 3rd place', async () => {
       render(
-        <LeaderboardTable onReturn={mockOnReturn} />,
+        <LeaderboardTable />,
         { authContext: { user: mockUser, profile: mockProfile } }
       )
 
@@ -234,7 +249,7 @@ describe('LeaderboardTable Component', () => {
 
     it('should display numeric rank for positions below 3rd', async () => {
       render(
-        <LeaderboardTable onReturn={mockOnReturn} />,
+        <LeaderboardTable />,
         { authContext: { user: mockUser, profile: mockProfile } }
       )
 
@@ -250,7 +265,7 @@ describe('LeaderboardTable Component', () => {
 
     it('should display "Leader" badge for the top player', async () => {
       render(
-        <LeaderboardTable onReturn={mockOnReturn} />,
+        <LeaderboardTable />,
         { authContext: { user: mockUser, profile: mockProfile } }
       )
 
@@ -267,7 +282,7 @@ describe('LeaderboardTable Component', () => {
       getSeasonLeaderboard.mockResolvedValue(mockLeaderboardDataWithTies)
 
       render(
-        <LeaderboardTable onReturn={mockOnReturn} />,
+        <LeaderboardTable />,
         { authContext: { user: mockUser, profile: mockProfile } }
       )
 
@@ -288,7 +303,7 @@ describe('LeaderboardTable Component', () => {
       getSeasonLeaderboard.mockResolvedValue([])
 
       render(
-        <LeaderboardTable onReturn={mockOnReturn} />,
+        <LeaderboardTable />,
         { authContext: { user: mockUser, profile: mockProfile } }
       )
 
@@ -301,7 +316,7 @@ describe('LeaderboardTable Component', () => {
       getSeasonLeaderboard.mockResolvedValue([])
 
       render(
-        <LeaderboardTable onReturn={mockOnReturn} />,
+        <LeaderboardTable />,
         { authContext: { user: mockUser, profile: mockProfile } }
       )
 
@@ -317,7 +332,7 @@ describe('LeaderboardTable Component', () => {
       getSeasonLeaderboard.mockRejectedValue(new Error('Failed to fetch'))
 
       render(
-        <LeaderboardTable onReturn={mockOnReturn} />,
+        <LeaderboardTable />,
         { authContext: { user: mockUser, profile: mockProfile } }
       )
 
@@ -349,7 +364,7 @@ describe('LeaderboardTable Component', () => {
       getSeasonLeaderboard.mockResolvedValue(dataWithNull)
 
       render(
-        <LeaderboardTable onReturn={mockOnReturn} />,
+        <LeaderboardTable />,
         { authContext: { user: mockUser, profile: mockProfile } }
       )
 
@@ -368,7 +383,7 @@ describe('LeaderboardTable Component', () => {
     it('should open PlayerCard when clicking on a player name', async () => {
       const user = userEvent.setup()
       render(
-        <LeaderboardTable onReturn={mockOnReturn} />,
+        <LeaderboardTable />,
         { authContext: { user: mockUser, profile: mockProfile } }
       )
 
@@ -388,7 +403,7 @@ describe('LeaderboardTable Component', () => {
     it('should close PlayerCard when close button is clicked', async () => {
       const user = userEvent.setup()
       render(
-        <LeaderboardTable onReturn={mockOnReturn} />,
+        <LeaderboardTable />,
         { authContext: { user: mockUser, profile: mockProfile } }
       )
 
@@ -419,7 +434,7 @@ describe('LeaderboardTable Component', () => {
       isUserAdmin.mockResolvedValue(true)
 
       render(
-        <LeaderboardTable onReturn={mockOnReturn} />,
+        <LeaderboardTable />,
         { authContext: { user: mockUser, profile: mockAdminProfile, isAdmin: true } }
       )
 
@@ -432,7 +447,7 @@ describe('LeaderboardTable Component', () => {
       isUserAdmin.mockResolvedValue(false)
 
       render(
-        <LeaderboardTable onReturn={mockOnReturn} />,
+        <LeaderboardTable />,
         { authContext: { user: mockUser, profile: mockProfile, isAdmin: false } }
       )
 
@@ -448,7 +463,7 @@ describe('LeaderboardTable Component', () => {
       const user = userEvent.setup()
 
       render(
-        <LeaderboardTable onReturn={mockOnReturn} />,
+        <LeaderboardTable />,
         { authContext: { user: mockUser, profile: mockAdminProfile, isAdmin: true } }
       )
 
@@ -476,7 +491,7 @@ describe('LeaderboardTable Component', () => {
       })
 
       render(
-        <LeaderboardTable onReturn={mockOnReturn} />,
+        <LeaderboardTable />,
         { authContext: { user: mockUser, profile: mockProfile } }
       )
 
@@ -499,7 +514,7 @@ describe('LeaderboardTable Component', () => {
       })
 
       render(
-        <LeaderboardTable onReturn={mockOnReturn} />,
+        <LeaderboardTable />,
         { authContext: { user: mockUser, profile: mockProfile } }
       )
 
@@ -517,7 +532,7 @@ describe('LeaderboardTable Component', () => {
   describe('Information Footer', () => {
     it('should display information footer when data is available', async () => {
       render(
-        <LeaderboardTable onReturn={mockOnReturn} />,
+        <LeaderboardTable />,
         { authContext: { user: mockUser, profile: mockProfile } }
       )
 
@@ -535,7 +550,7 @@ describe('LeaderboardTable Component', () => {
     it('should refetch leaderboard data when season changes', async () => {
       const user = userEvent.setup()
       render(
-        <LeaderboardTable onReturn={mockOnReturn} />,
+        <LeaderboardTable />,
         { authContext: { user: mockUser, profile: mockProfile } }
       )
 
@@ -564,7 +579,7 @@ describe('LeaderboardTable Component', () => {
 
     it('should have accessible player name buttons', async () => {
       render(
-        <LeaderboardTable onReturn={mockOnReturn} />,
+        <LeaderboardTable />,
         { authContext: { user: mockUser, profile: mockProfile } }
       )
 

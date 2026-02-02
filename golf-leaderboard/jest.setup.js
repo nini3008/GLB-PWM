@@ -58,3 +58,49 @@ Element.prototype.hasPointerCapture = jest.fn()
 Element.prototype.setPointerCapture = jest.fn()
 Element.prototype.releasePointerCapture = jest.fn()
 Element.prototype.scrollIntoView = jest.fn()
+
+// Mock Next.js navigation hooks
+jest.mock('next/navigation', () => ({
+  useRouter: jest.fn(() => ({
+    push: jest.fn(),
+    replace: jest.fn(),
+    prefetch: jest.fn(),
+    back: jest.fn(),
+    forward: jest.fn(),
+    refresh: jest.fn(),
+  })),
+  usePathname: jest.fn(() => '/dashboard'),
+  useSearchParams: jest.fn(() => new URLSearchParams()),
+}))
+
+// Mock the custom useNavigation hook
+jest.mock('@/hooks/useNavigation', () => ({
+  useNavigation: jest.fn(() => ({
+    goToDashboard: jest.fn(),
+    goToLeaderboard: jest.fn(),
+    goToEnterScore: jest.fn(),
+    goToViewScores: jest.fn(),
+    goToJoinSeason: jest.fn(),
+    goToProfile: jest.fn(),
+    goToLogin: jest.fn(),
+    goToRegister: jest.fn(),
+    goToForgotPassword: jest.fn(),
+    goToResetPassword: jest.fn(),
+    goToCreateSeason: jest.fn(),
+    goToManageSeasons: jest.fn(),
+    goToCreateGame: jest.fn(),
+    goToManageScores: jest.fn(),
+    goToManageCourses: jest.fn(),
+    goToManageGames: jest.fn(),
+    goToBonusRecalculate: jest.fn(),
+    goToRecalculateHandicaps: jest.fn(),
+    router: {
+      push: jest.fn(),
+      replace: jest.fn(),
+      prefetch: jest.fn(),
+      back: jest.fn(),
+      forward: jest.fn(),
+      refresh: jest.fn(),
+    },
+  })),
+}))
