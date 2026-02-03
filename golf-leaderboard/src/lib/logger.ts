@@ -3,6 +3,7 @@
  * Replaces console.log statements throughout the codebase
  * Only logs in development to prevent production noise
  */
+/* eslint-disable @typescript-eslint/no-explicit-any */
 
 const isDev = process.env.NODE_ENV !== 'production';
 
