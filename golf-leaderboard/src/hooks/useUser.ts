@@ -5,6 +5,7 @@ import { useEffect, useState } from 'react';
 import { User } from '@supabase/supabase-js';
 import { useAuth } from '@/context/AuthContext';
 import { supabase } from '@/lib/supabase/client';
+import { logger } from '@/lib/logger';
 
 // Define types for user profile
 interface UserProfile {
@@ -59,7 +60,7 @@ export function useUser() {
 
       return { success: true };
     } catch (error) {
-      console.error('Error updating profile:', error);
+      logger.error('Error updating profile:', error);
       return { success: false, error };
     } finally {
       setIsLoading(false);
@@ -84,14 +85,14 @@ export function useUser() {
   
     setIsLoading(true);
     try {
-      console.log("Starting image upload for user:", user.id);
+      logger.debug("Starting image upload for user:", user.id);
       
       // Create a safer file path
       const fileExt = imageFile.name.split('.').pop();
       const fileName = `${Date.now()}.${fileExt}`;
       const filePath = `${user.id}/${fileName}`;
       
-      console.log("Uploading to path:", filePath);
+      logger.debug("Uploading to path:", filePath);
       
       // Upload the image
       const { error: uploadError } = await supabase.storage
@@ -102,7 +103,7 @@ export function useUser() {
         });
   
       if (uploadError) {
-        console.error("Upload error:", uploadError);
+        logger.error("Upload error:", uploadError);
         throw uploadError;
       }
   
@@ -112,7 +113,7 @@ export function useUser() {
         .getPublicUrl(filePath);
   
       const imageUrl = data.publicUrl;
-      console.log("Image uploaded, URL:", imageUrl);
+      logger.debug("Image uploaded, URL:", imageUrl);
   
       // Update profile
       const { error: updateError } = await supabase
@@ -121,14 +122,14 @@ export function useUser() {
         .eq('id', user.id);
   
       if (updateError) {
-        console.error("Profile update error:", updateError);
+        logger.error("Profile update error:", updateError);
         throw updateError;
       }
   
-      console.log("Profile updated successfully");
+      logger.debug("Profile updated successfully");
       return { success: true, imageUrl };
     } catch (error) {
-      console.error('Error updating profile image:', error);
+      logger.error('Error updating profile image:', error);
       return { success: false, error };
     } finally {
       setIsLoading(false);
@@ -164,7 +165,7 @@ export function useUser() {
 
       return data;
     } catch (error) {
-      console.error('Error fetching user seasons:', error);
+      logger.error('Error fetching user seasons:', error);
       throw error;
     }
   };
@@ -204,7 +205,7 @@ export function useUser() {
 
       return data;
     } catch (error) {
-      console.error('Error fetching user scores:', error);
+      logger.error('Error fetching user scores:', error);
       throw error;
     }
   };

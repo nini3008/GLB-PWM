@@ -7,6 +7,8 @@ import { z } from 'zod';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { toast } from 'sonner';
 import { useUser } from '@/hooks/useUser';
+import { useIsMobile } from '@/hooks/useMediaQuery';
+import { logger } from '@/lib/logger';
 import {
   Card,
   CardContent,
@@ -103,23 +105,9 @@ export default function ManageScoresView() {
   const [codeError, setCodeError] = useState<string | null>(null);
   const [formattedDates, setFormattedDates] = useState<Record<string, string>>({});
   const [expandedNotes, setExpandedNotes] = useState<string | null>(null);
-  const [isMobile, setIsMobile] = useState(false);
 
-  // Check viewport size on mount and window resize
-  useEffect(() => {
-    const checkMobile = () => {
-      setIsMobile(window.innerWidth < 768);
-    };
-    
-    // Set initial value
-    checkMobile();
-    
-    // Add event listener
-    window.addEventListener('resize', checkMobile);
-    
-    // Clean up
-    return () => window.removeEventListener('resize', checkMobile);
-  }, []);
+  // Use mobile detection hook (replaces duplicate logic)
+  const isMobile = useIsMobile();
 
   // Initialize form
   const form = useForm<EditScoreFormValues>({
@@ -188,7 +176,7 @@ export default function ManageScoresView() {
     } catch (error: unknown) {
       const err = error as { message?: string; status?: number; details?: string; error_description?: string };
       if (process.env.NODE_ENV !== 'production') {
-        console.error("Round code validation error:", error);
+        logger.error("Round code validation error:", error);
       }
 
       // Check for specific error types
@@ -321,7 +309,7 @@ export default function ManageScoresView() {
         description: "The score and points have been updated successfully.",
       });
     } catch (error) {
-      console.error(error);
+      logger.error(error);
       toast.error("Error updating score", {
         description: "Please try again.",
       });
@@ -372,7 +360,7 @@ export default function ManageScoresView() {
         description: "The score has been removed from the leaderboard.",
       });
     } catch (error) {
-      console.error(error);
+      logger.error(error);
       toast.error("Error deleting score", {
         description: "Please try again.",
       });

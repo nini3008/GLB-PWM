@@ -10,6 +10,7 @@ import {
 } from '@supabase/supabase-js';
 import { PostgrestError } from '@supabase/postgrest-js';
 import { supabase, getUserProfile } from '../lib/supabase/client';
+import { logger } from '@/lib/logger';
 
 // User profile type that matches the structure from Supabase
 interface UserProfile {
@@ -64,7 +65,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       if (document.visibilityState === 'visible') {
         // Record timestamp when tab becomes visible
         lastTabActivationRef.current = Date.now();
-        console.log("Tab became visible at:", lastTabActivationRef.current);
+        logger.debug("Tab became visible at:", lastTabActivationRef.current);
       }
     };
 
@@ -104,11 +105,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             setProfile(profileData as UserProfile);
             setIsAdmin(profileData.is_admin);
           } catch (error) {
-            console.error('Error fetching user profile:', error);
+            logger.error('Error fetching user profile:', error);
           }
         }
       } catch (error) {
-        console.error('Error initializing auth:', error);
+        logger.error('Error initializing auth:', error);
       } finally {
         if (mounted) {
           setIsLoading(false);
@@ -154,7 +155,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             setIsAdmin(profileData.is_admin);
           }
         } catch (error) {
-          console.error('Error fetching user profile:', error);
+          logger.error('Error fetching user profile:', error);
         } finally {
           if (mounted) setIsLoading(false);
         }
@@ -171,7 +172,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             setIsAdmin(profileData.is_admin);
           }
         } catch (error) {
-          console.error('Error updating user profile:', error);
+          logger.error('Error updating user profile:', error);
         }
       } else if (event === 'SIGNED_OUT') {
         setProfile(null);
@@ -223,7 +224,7 @@ const signOut = async (): Promise<{ error: AppError | null }> => {
     const { data: { session } } = await supabase.auth.getSession();
     
     if (!session) {
-      console.log('No active session found, user already signed out');
+      logger.info('No active session found, user already signed out');
       // Clear any local auth state manually to ensure consistency
       return { error: null };
     }
@@ -232,12 +233,12 @@ const signOut = async (): Promise<{ error: AppError | null }> => {
     const { error } = await supabase.auth.signOut();
     
     if (error) {
-      console.error('Sign out error:', error);
+      logger.error('Sign out error:', error);
       
       // If we get a 403 Forbidden error, the token might be invalid
       // We should still consider this a "successful" logout from the user's perspective
       if (error.status === 403) {
-        console.log('403 error during logout - clearing local session data');
+        logger.info('403 error during logout - clearing local session data');
         // Force local cleanup 
         localStorage.removeItem('supabase.auth.token');
         // You might need to clear other auth-related items depending on your setup
@@ -248,7 +249,7 @@ const signOut = async (): Promise<{ error: AppError | null }> => {
     
     return { error };
   } catch (err) {
-    console.error('Unexpected error during sign out:', err);
+    logger.error('Unexpected error during sign out:', err);
     return { error: err as AppError };
   }
 };
@@ -272,7 +273,7 @@ const signOut = async (): Promise<{ error: AppError | null }> => {
       
       return { error };
     } catch (err) {
-      console.error('Error updating profile:', err);
+      logger.error('Error updating profile:', err);
       return { error: err as AppError };
     }
   };
@@ -285,7 +286,7 @@ const resetPassword = async (email: string): Promise<{ error: AppError | null }>
       });
       return { error };
     } catch (err) {
-      console.error('Error resetting password:', err);
+      logger.error('Error resetting password:', err);
       return { error: err as AppError };
     }
   };

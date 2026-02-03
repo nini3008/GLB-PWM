@@ -12,6 +12,7 @@ import { ArrowLeft, Calendar, Flag, Ticket, RefreshCw } from 'lucide-react';
 import { toast } from 'sonner';
 import { useAuth } from '@/context/AuthContext';
 import { useNavigation } from '@/hooks/useNavigation';
+import { useIsMobile } from '@/hooks/useMediaQuery';
 
 // Define interface for game data
 interface Game {
@@ -33,23 +34,9 @@ export default function ManageGamesView() {
   const [games, setGames] = useState<Game[]>([]);
   const [loading, setLoading] = useState(true);
   const { isAdmin } = useAuth();
-  const [isMobile, setIsMobile] = useState(false);
 
-  // Check viewport size on mount and window resize
-  useEffect(() => {
-    const checkMobile = () => {
-      setIsMobile(window.innerWidth < 768);
-    };
-    
-    // Set initial value
-    checkMobile();
-    
-    // Add event listener
-    window.addEventListener('resize', checkMobile);
-    
-    // Clean up
-    return () => window.removeEventListener('resize', checkMobile);
-  }, []);
+  // Use mobile detection hook (replaces duplicate logic)
+  const isMobile = useIsMobile();
 
   // Move the updateGameStatus function out of the useEffect
   const handleGameStatusUpdate = async (gameId: string, status: 'active' | 'completed') => {

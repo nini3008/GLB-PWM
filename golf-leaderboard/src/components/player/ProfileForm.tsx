@@ -7,6 +7,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { toast } from 'sonner';
 import { useUser } from '@/hooks/useUser';
 import { useNavigation } from '@/hooks/useNavigation';
+import { logger } from '@/lib/logger';
 import {
   Card,
   CardContent,
@@ -145,7 +146,7 @@ export default function ProfileForm() {
         const userSeasons = await getUserSeasons(user.id);
         setSeasons(userSeasons);
       } catch (error) {
-        console.error('Error loading seasons:', error);
+        logger.error('Error loading seasons:', error);
       }
     };
 
@@ -180,7 +181,7 @@ export default function ProfileForm() {
         );
         setAchievementProgress(progress);
       } catch (error) {
-        console.error('Error loading achievements:', error);
+        logger.error('Error loading achievements:', error);
       } finally {
         setIsLoadingAchievements(false);
       }
@@ -226,7 +227,7 @@ export default function ProfileForm() {
           setSeasonRank(null);
         }
       } catch (error) {
-        console.error('Error loading scores:', error);
+        logger.error('Error loading scores:', error);
       } finally {
         setIsLoadingScores(false);
       }
@@ -247,7 +248,7 @@ export default function ProfileForm() {
 
   // Handle form submission
   const handleSubmit = async (values: ProfileFormValues) => {
-    console.log("Form submitted with values:", values);
+    logger.debug("Form submitted with values:", values);
     if (!user) {
       toast.error("Authentication error", {
         description: "You must be logged in to update your profile."
@@ -258,7 +259,7 @@ export default function ProfileForm() {
     setIsSubmitting(true);
     
     try {
-        console.log("Attempting to update profile...");
+        logger.debug("Attempting to update profile...");
         
         // Use the AuthContext's updateProfile function directly
         const { error } = await updateProfile({
@@ -274,12 +275,12 @@ export default function ProfileForm() {
           throw error;
         }
         
-        console.log("Profile update successful");
+        logger.debug("Profile update successful");
         toast.success("Profile updated", {
           description: "Your profile has been successfully updated."
         });
       } catch (error) {
-        console.error('Error updating profile:', error);
+        logger.error('Error updating profile:', error);
         toast.error("Failed to update profile", {
           description: "Please try again later."
         });

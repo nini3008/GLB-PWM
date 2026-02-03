@@ -31,6 +31,7 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { getSeasonLeaderboard, supabase, isUserAdmin, subscribeToScoreChanges } from '@/lib/supabase/client';
 import { useAuth } from '@/context/AuthContext';
 import { useNavigation } from '@/hooks/useNavigation';
+import { useIsMobile } from '@/hooks/useMediaQuery';
 import { PlayerCard } from './PlayerCard';
 import PlayerComparison from './PlayerComparison';
 
@@ -56,7 +57,6 @@ export function LeaderboardTable({ seasonId }: LeaderboardProps) {
   const [seasons, setSeasons] = useState<{ id: string; name: string }[]>([]);
   const [selectedSeason, setSelectedSeason] = useState<string | undefined>(seasonId);
   const [loadingSeasons, setLoadingSeasons] = useState(true);
-  const [isMobile, setIsMobile] = useState(false);
   const [isAdmin, setIsAdmin] = useState(false);
   const [showReport, setShowReport] = useState(false);
   const [selectedPlayerId, setSelectedPlayerId] = useState<string | null>(null);
@@ -65,6 +65,9 @@ export function LeaderboardTable({ seasonId }: LeaderboardProps) {
   const [isCompareOpen, setIsCompareOpen] = useState(false);
   const [lastUpdated, setLastUpdated] = useState<Date | null>(null);
   const fetchLeaderboardRef = useRef<(() => void) | null>(null);
+
+  // Use mobile detection hook (replaces duplicate logic)
+  const isMobile = useIsMobile();
 
   // Handle player name click
   const handlePlayerClick = (playerId: string) => {
@@ -102,22 +105,6 @@ export function LeaderboardTable({ seasonId }: LeaderboardProps) {
 
     checkAdminStatus();
   }, [user]);
-
-  // Check viewport size on mount and window resize
-  useEffect(() => {
-    const checkMobile = () => {
-      setIsMobile(window.innerWidth < 768);
-    };
-    
-    // Set initial value
-    checkMobile();
-    
-    // Add event listener
-    window.addEventListener('resize', checkMobile);
-    
-    // Clean up
-    return () => window.removeEventListener('resize', checkMobile);
-  }, []);
 
   // Fetch seasons list from supabase
   useEffect(() => {

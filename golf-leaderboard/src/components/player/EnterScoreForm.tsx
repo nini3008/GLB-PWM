@@ -7,6 +7,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { toast } from 'sonner';
 import { useUser } from '@/hooks/useUser';
 import { useNavigation } from '@/hooks/useNavigation';
+import { logger } from '@/lib/logger';
 import {
   Card,
   CardContent,
@@ -120,7 +121,7 @@ export default function EnterScoreForm() {
     // Standardize the input format
     const formattedCode = String(roundCode || '').trim().toUpperCase();
     
-    console.log("Validating code:", formattedCode);
+    logger.debug("Validating code:", formattedCode);
     
     if (!formattedCode || formattedCode.length < 3) {
       if (formattedCode && formattedCode.length > 0 && formattedCode.length < 3) {
@@ -173,7 +174,7 @@ export default function EnterScoreForm() {
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
     } catch (error: any) {
       if (process.env.NODE_ENV !== 'production') {
-        console.error("Round code validation error:", {
+        logger.error("Round code validation error:", {
           error,
           message: error.message || "No error message",
           status: error.status,
@@ -225,7 +226,7 @@ export default function EnterScoreForm() {
       setCalculatedScore(calculatedScore);
       setShowConfirmation(true);
     } catch (error) {
-      console.log(error)
+      logger.debug(error)
       toast.error("Error calculating score", {
         description: "Please try again.",
       });
@@ -285,10 +286,10 @@ export default function EnterScoreForm() {
             try {
               await updateScoreBonusPoints(scoreToUpdate.id, shouldHaveBonus);
             } catch (error) {
-              console.error(`Failed to update bonus points for score ${scoreToUpdate.id}:`, error);
+              logger.error(`Failed to update bonus points for score ${scoreToUpdate.id}:`, error);
             }
           } else {
-            console.log(`No update needed for player ${update.playerId} (current=${scoreToUpdate?.bonus_points}, should=${shouldHaveBonus})`);
+            logger.debug(`No update needed for player ${update.playerId} (current=${scoreToUpdate?.bonus_points}, should=${shouldHaveBonus})`);
           }
       }
 
@@ -314,7 +315,7 @@ export default function EnterScoreForm() {
         nav.goToDashboard();
       }, 2000);
     } catch (error) {
-      console.error("Error submitting score:", error);
+      logger.error("Error submitting score:", error);
       toast.error("Error submitting score", {
         description: "Please try again.",
       });
@@ -416,7 +417,7 @@ export default function EnterScoreForm() {
                         type="button" 
                         onClick={() => {
                           const code = form.getValues().roundCode;
-                          console.log("Button clicked with code:", code);
+                          logger.debug("Button clicked with code:", code);
                           validateCode(code);
                         }}
                         disabled={isValidatingCode}
@@ -540,7 +541,7 @@ export default function EnterScoreForm() {
                   type="button" 
                   onClick={() => {
                     const code = form.getValues().roundCode;
-                    console.log("Proceed button clicked with code:", code);
+                    logger.debug("Proceed button clicked with code:", code);
                     // Make sure the code is formatted correctly before validation
                     const formattedCode = String(code || '').trim().toUpperCase();
                     form.setValue('roundCode', formattedCode);

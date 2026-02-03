@@ -3,6 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import { LockKeyhole, CheckCircle } from 'lucide-react';
 import { supabase } from '@/lib/supabase/client';
+import { logger } from '@/lib/logger';
 
 export default function ResetPasswordPage() {
   const [password, setPassword] = useState('');
@@ -21,7 +22,7 @@ export default function ResetPasswordPage() {
           setError('Invalid or expired password reset link. Please request a new reset link.');
         }
       } catch (err) {
-        console.error('Error checking session:', err);
+        logger.error('Error checking session:', err);
         setError('Failed to verify your session.');
       }
     };
@@ -63,7 +64,7 @@ export default function ResetPasswordPage() {
     // If still loading after 8 seconds, assume success but with communication error
     const loadingTimeout = setTimeout(() => {
       if (isLoading) {
-        console.log('Password update request timed out but likely succeeded');
+        logger.debug('Password update request timed out but likely succeeded');
         setIsLoading(false);
         setSuccess(true);
       }
@@ -94,7 +95,7 @@ export default function ResetPasswordPage() {
     try {
       // Start a timeout that will automatically set success if the Supabase call doesn't return
       const timeoutId = setTimeout(() => {
-        console.log('Password update timed out but likely succeeded');
+        logger.debug('Password update timed out but likely succeeded');
         setIsLoading(false);
         setSuccess(true);
       }, 5000);
@@ -112,7 +113,7 @@ export default function ResetPasswordPage() {
       }
        // eslint-disable-next-line @typescript-eslint/no-explicit-any
     } catch (err: any) {
-      console.log('Password update caught exception:', err.message);
+      logger.debug('Password update caught exception:', err.message);
       // For any errors, assume success since we know it probably worked
       setSuccess(true);
     } finally {

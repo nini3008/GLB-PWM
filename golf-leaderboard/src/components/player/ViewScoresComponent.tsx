@@ -3,6 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import { useUser } from '@/hooks/useUser';
 import { useNavigation } from '@/hooks/useNavigation';
+import { useIsMobile } from '@/hooks/useMediaQuery';
 import {
   Card,
   CardContent,
@@ -72,25 +73,11 @@ export default function ViewScoresComponent() {
   const [codeError, setCodeError] = useState<string | null>(null);
   const [formattedDates, setFormattedDates] = useState<Record<string, string>>({});
   const [expandedNotes, setExpandedNotes] = useState<string | null>(null);
-  const [isMobile, setIsMobile] = useState(false);
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const [roundRecap, setRoundRecap] = useState<any>(null);
 
-  // Check viewport size on mount and window resize
-  useEffect(() => {
-    const checkMobile = () => {
-      setIsMobile(window.innerWidth < 768);
-    };
-    
-    // Set initial value
-    checkMobile();
-    
-    // Add event listener
-    window.addEventListener('resize', checkMobile);
-    
-    // Clean up
-    return () => window.removeEventListener('resize', checkMobile);
-  }, []);
+  // Use mobile detection hook (replaces duplicate logic)
+  const isMobile = useIsMobile();
 
   // Clear code error when user changes the round code
   useEffect(() => {
