@@ -93,7 +93,7 @@ describe('LeaderboardTable Component', () => {
     it('should call navigation when back button is clicked', async () => {
       const mockGoToDashboard = jest.fn()
 
-      // Mock the useNavigation hook to return our mock function
+      // Mock the useNavigation hook to return our mock function callbacks
       // eslint-disable-next-line
       const useNavigation = require('@/hooks/useNavigation').useNavigation
       useNavigation.mockReturnValue({
