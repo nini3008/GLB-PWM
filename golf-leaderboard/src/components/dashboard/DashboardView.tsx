@@ -71,7 +71,7 @@ export default function DashboardView({ isAdmin }: DashboardViewProps) {
       <div className="grid grid-cols-2 gap-4">
         <button
           onClick={nav.goToEnterScore}
-          className="flex items-center justify-center gap-3 bg-gradient-to-br from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 text-white rounded-xl p-5 shadow-md hover:shadow-lg transition-all duration-200"
+          className="flex items-center justify-center gap-3 bg-gradient-to-br from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white rounded-xl p-5 shadow-md hover:shadow-lg transition-all duration-200"
         >
           <PlusCircle className="h-6 w-6" />
           <span className="font-semibold text-lg">Enter Score</span>
