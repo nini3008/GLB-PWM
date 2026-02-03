@@ -41,12 +41,12 @@ export default function Header({ username, isAdmin, onLogout }: HeaderProps) {
   const avatarInitial = username?.charAt(0).toUpperCase() || 'U';
 
   return (
-    <header className="bg-gradient-to-r from-green-800 to-green-700 text-white shadow-lg sticky top-0 z-50">
+    <header className="bg-gradient-to-r from-slate-800 to-slate-900 text-white shadow-lg sticky top-0 z-50">
       <div className="container mx-auto px-4 py-3">
         <div className="flex justify-between items-center">
           <div className="flex items-center space-x-2">
-            <div className="bg-white rounded-full p-1.5">
-              <Flag className="h-5 w-5 text-green-700" />
+            <div className="bg-emerald-500 rounded-full p-1.5">
+              <Flag className="h-5 w-5 text-white" />
             </div>
             <h1 className="text-xl sm:text-2xl font-bold tracking-tight">
               Golf<span className="font-light">Leaderboard</span>
@@ -58,26 +58,26 @@ export default function Header({ username, isAdmin, onLogout }: HeaderProps) {
             <Sheet open={sheetOpen} onOpenChange={setSheetOpen}>
               <SheetTrigger asChild>
                 <button
-                  className="md:hidden flex items-center p-1.5 rounded-lg hover:bg-green-600 transition-colors duration-200"
+                  className="md:hidden flex items-center p-1.5 rounded-lg hover:bg-slate-700 transition-colors duration-200"
                   aria-label="Open menu"
                 >
                   <Menu className="h-5 w-5" />
                 </button>
               </SheetTrigger>
-              <SheetContent side="right" className="w-72 bg-green-800 border-green-700 text-white">
+              <SheetContent side="right" className="w-72 bg-slate-800 border-slate-700 text-white">
                 <SheetHeader>
                   <SheetTitle className="text-white text-left">Menu</SheetTitle>
                 </SheetHeader>
                 <div className="mt-6 flex flex-col gap-4">
                   {/* User info */}
-                  <div className="flex items-center gap-3 pb-4 border-b border-green-600">
-                    <div className="h-10 w-10 rounded-full bg-green-600 flex items-center justify-center text-lg font-medium">
+                  <div className="flex items-center gap-3 pb-4 border-b border-slate-600">
+                    <div className="h-10 w-10 rounded-full bg-emerald-600 flex items-center justify-center text-lg font-medium">
                       {avatarInitial}
                     </div>
                     <div>
                       <div className="font-medium">{username}</div>
                       {isAdmin && (
-                        <span className="text-xs bg-amber-500 text-amber-900 px-2 py-0.5 rounded-full font-medium">
+                        <span className="text-xs bg-emerald-500 text-white px-2 py-0.5 rounded-full font-medium">
                           Admin
                         </span>
                       )}
@@ -93,8 +93,8 @@ export default function Header({ username, isAdmin, onLogout }: HeaderProps) {
                         onClick={() => setSheetOpen(false)}
                         className={`flex items-center gap-2 px-3 py-2.5 rounded-lg text-sm transition-colors duration-200 ${
                           pathname === href
-                            ? 'bg-green-600 text-white'
-                            : 'text-green-100 hover:bg-green-600/50'
+                            ? 'bg-slate-700 text-white'
+                            : 'text-slate-300 hover:bg-slate-700/50'
                         }`}
                       >
                         <Icon className="h-4 w-4" />
@@ -106,8 +106,8 @@ export default function Header({ username, isAdmin, onLogout }: HeaderProps) {
                       onClick={() => setSheetOpen(false)}
                       className={`flex items-center gap-2 px-3 py-2.5 rounded-lg text-sm transition-colors duration-200 ${
                         pathname === '/profile'
-                          ? 'bg-green-600 text-white'
-                          : 'text-green-100 hover:bg-green-600/50'
+                          ? 'bg-slate-700 text-white'
+                          : 'text-slate-300 hover:bg-slate-700/50'
                       }`}
                     >
                       <User className="h-4 w-4" />
@@ -121,7 +121,7 @@ export default function Header({ username, isAdmin, onLogout }: HeaderProps) {
                       setSheetOpen(false);
                       onLogout();
                     }}
-                    className="flex items-center gap-2 bg-red-600 hover:bg-red-700 text-white px-3 py-2.5 rounded-lg mt-4 transition-colors duration-200"
+                    className="flex items-center gap-2 bg-slate-600 hover:bg-slate-500 text-white px-3 py-2.5 rounded-lg mt-4 transition-colors duration-200"
                   >
                     <LogOut className="h-4 w-4" />
                     <span>Logout</span>
@@ -141,8 +141,8 @@ export default function Header({ username, isAdmin, onLogout }: HeaderProps) {
                     href={href}
                     className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm transition-colors duration-200 ${
                       pathname === href
-                        ? 'bg-green-600 text-white'
-                        : 'text-green-100 hover:bg-green-600/50'
+                        ? 'bg-slate-700 text-white'
+                        : 'text-slate-300 hover:bg-slate-700/50'
                     }`}
                   >
                     <Icon className="h-4 w-4" />
@@ -154,12 +154,12 @@ export default function Header({ username, isAdmin, onLogout }: HeaderProps) {
               {/* User dropdown */}
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
-                  <button className="flex items-center gap-2 px-2 py-1 rounded-lg hover:bg-green-600/50 transition-colors duration-200">
-                    <div className="h-8 w-8 rounded-full bg-green-600 flex items-center justify-center">
+                  <button className="flex items-center gap-2 px-2 py-1 rounded-lg hover:bg-slate-700/50 transition-colors duration-200">
+                    <div className="h-8 w-8 rounded-full bg-emerald-600 flex items-center justify-center">
                       {avatarInitial}
                     </div>
                     <span className="font-medium max-w-24 truncate">{username}</span>
-                    <ChevronDown className="h-4 w-4 text-green-200" />
+                    <ChevronDown className="h-4 w-4 text-slate-400" />
                   </button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end" className="w-48">
@@ -170,7 +170,7 @@ export default function Header({ username, isAdmin, onLogout }: HeaderProps) {
                     </Link>
                   </DropdownMenuItem>
                   {isAdmin && (
-                    <DropdownMenuItem disabled className="flex items-center gap-2 text-amber-600">
+                    <DropdownMenuItem disabled className="flex items-center gap-2 text-emerald-600">
                       <Shield className="h-4 w-4" />
                       Admin
                     </DropdownMenuItem>
@@ -178,7 +178,7 @@ export default function Header({ username, isAdmin, onLogout }: HeaderProps) {
                   <DropdownMenuSeparator />
                   <DropdownMenuItem
                     onClick={onLogout}
-                    className="flex items-center gap-2 text-red-600 focus:text-red-600 cursor-pointer"
+                    className="flex items-center gap-2 text-slate-600 focus:text-slate-700 cursor-pointer"
                   >
                     <LogOut className="h-4 w-4" />
                     Logout

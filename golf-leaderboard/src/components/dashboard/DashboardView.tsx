@@ -71,16 +71,16 @@ export default function DashboardView({ isAdmin }: DashboardViewProps) {
       <div className="grid grid-cols-2 gap-4">
         <button
           onClick={nav.goToEnterScore}
-          className="flex items-center justify-center gap-3 bg-gradient-to-br from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white rounded-xl p-5 shadow-md hover:shadow-lg transition-all duration-200"
+          className="flex items-center justify-center gap-3 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl p-5 shadow-sm hover:shadow-md transition-all duration-200"
         >
           <PlusCircle className="h-6 w-6" />
           <span className="font-semibold text-lg">Enter Score</span>
         </button>
         <button
           onClick={nav.goToLeaderboard}
-          className="flex items-center justify-center gap-3 bg-gradient-to-br from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600 text-white rounded-xl p-5 shadow-md hover:shadow-lg transition-all duration-200"
+          className="flex items-center justify-center gap-3 bg-white hover:bg-slate-50 text-slate-700 border-2 border-slate-200 hover:border-slate-300 rounded-xl p-5 transition-all duration-200"
         >
-          <Award className="h-6 w-6" />
+          <Award className="h-6 w-6 text-emerald-600" />
           <span className="font-semibold text-lg">Leaderboard</span>
         </button>
       </div>
@@ -103,7 +103,7 @@ export default function DashboardView({ isAdmin }: DashboardViewProps) {
       {/* Tools Section - With tabs for admin */}
       {isAdmin ? (
         <Tabs defaultValue="player" className="w-full">
-          <TabsList className="w-full justify-start bg-gray-100 p-1 rounded-lg">
+          <TabsList className="w-full justify-start bg-slate-100 p-1 rounded-lg">
             <TabsTrigger value="player" className="flex-1 max-w-40">
               <User className="h-4 w-4 mr-1.5" />
               Player Tools
@@ -189,10 +189,10 @@ export default function DashboardView({ isAdmin }: DashboardViewProps) {
         </Tabs>
       ) : (
         /* Non-admin: Just show player tools directly */
-        <div className="bg-white rounded-xl p-5 border border-gray-100">
+        <div className="bg-white rounded-xl p-5 border border-slate-200">
           <div className="flex items-center gap-2 mb-4">
-            <User className="h-5 w-5 text-green-600" />
-            <h3 className="text-lg font-semibold text-gray-800">Quick Actions</h3>
+            <User className="h-5 w-5 text-slate-500" />
+            <h3 className="text-lg font-semibold text-slate-800">Quick Actions</h3>
           </div>
           <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
             <DashboardCard

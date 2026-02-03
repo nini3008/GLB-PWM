@@ -18,24 +18,24 @@ export default function DashboardCard({
   isAdmin = false
 }: DashboardCardProps) {
   const adminColors = {
-    bg: 'bg-amber-50',
-    hover: 'hover:bg-amber-100',
-    iconBg: 'bg-amber-100',
-    iconText: 'text-amber-600',
+    bg: 'bg-slate-50',
+    hover: 'hover:bg-slate-100',
+    iconBg: 'bg-slate-200',
+    iconText: 'text-slate-600',
   };
 
   const userColors = {
-    bg: 'bg-green-50',
-    hover: 'hover:bg-green-100',
-    iconBg: 'bg-green-100',
-    iconText: 'text-green-600',
+    bg: 'bg-white',
+    hover: 'hover:bg-slate-50',
+    iconBg: 'bg-emerald-50',
+    iconText: 'text-emerald-600',
   };
 
   const colors = isAdmin ? adminColors : userColors;
 
   return (
     <div
-      className={`${colors.bg} ${colors.hover} rounded-xl border border-gray-100 transition-all duration-300 cursor-pointer overflow-hidden group`}
+      className={`${colors.bg} ${colors.hover} rounded-xl border border-slate-200 transition-all duration-200 cursor-pointer overflow-hidden group`}
       onClick={onClick}
     >
       <div className="p-4">
