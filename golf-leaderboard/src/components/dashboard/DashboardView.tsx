@@ -1,6 +1,6 @@
 'use client'
 // src/components/dashboard/DashboardView.tsx
-import React from 'react';
+import React, { useMemo } from 'react';
 import { Award, PlusCircle, Calendar, Flag, User, Users, ListIcon, Medal, ClipboardList, Shield } from 'lucide-react';
 import DashboardCard from './DashboardCard';
 import QuickStatsBar from './QuickStatsBar';
@@ -10,6 +10,30 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useUser } from '@/hooks/useUser';
 import { useNavigation } from '@/hooks/useNavigation';
 
+// Golf-themed subtexts for the dashboard greeting
+const golfSubtexts = [
+  "Time to see who's buying drinks at the 19th hole.",
+  "Let's see if that handicap is still accurate.",
+  "Mulligans don't count here.",
+  "No foot wedges in these scores.",
+  "The leaderboard awaits your glory... or shame.",
+  "How many balls did you sacrifice today?",
+  "Your scorecard can't hide forever.",
+  "Someone's gotta be at the bottom of the leaderboard.",
+  "Did you break 100? Be honest.",
+  "The trees giveth, and the trees taketh away.",
+  "Remember: it's not about the score, it's about... wait, yes it is.",
+  "Your handicap called. It's worried.",
+  "Another day, another lost ball.",
+  "Let's pretend that triple bogey didn't happen.",
+  "Golf: where you pay to be frustrated.",
+  "At least you're not working.",
+  "Fairways are overrated anyway.",
+  "The rough builds character.",
+  "That putt was closer than it looked. Right?",
+  "Grip it and rip it. Then go find it.",
+];
+
 interface DashboardViewProps {
   isAdmin: boolean;
 }
@@ -17,6 +41,11 @@ interface DashboardViewProps {
 export default function DashboardView({ isAdmin }: DashboardViewProps) {
   const { user, profile } = useUser();
   const nav = useNavigation();
+
+  // Pick a random subtext on mount (stable for session)
+  const subtext = useMemo(() => {
+    return golfSubtexts[Math.floor(Math.random() * golfSubtexts.length)];
+  }, []);
 
   // Get greeting based on time of day
   const getGreeting = () => {
@@ -34,7 +63,7 @@ export default function DashboardView({ isAdmin }: DashboardViewProps) {
           <h2 className="text-2xl font-bold text-gray-800">
             {getGreeting()}, {profile?.username || 'Player'}
           </h2>
-          <p className="text-gray-500 text-sm">Ready to hit the course?</p>
+          <p className="text-gray-500 text-sm">{subtext}</p>
         </div>
       </div>
 
