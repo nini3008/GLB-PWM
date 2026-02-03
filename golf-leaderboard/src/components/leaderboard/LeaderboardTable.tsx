@@ -1,6 +1,6 @@
 'use client'
 // src/components/leaderboard/LeaderboardTable.tsx
-import React, { useState, useEffect, useCallback, useRef } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import {
   Card,
   CardHeader,
@@ -28,7 +28,7 @@ import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Award, Trophy, Medal, ArrowLeft, Users, Info, FileText, X } from 'lucide-react';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { getSeasonLeaderboard, supabase, isUserAdmin, subscribeToScoreChanges } from '@/lib/supabase/client';
+import { getSeasonLeaderboard, supabase, isUserAdmin } from '@/lib/supabase/client';
 import { useAuth } from '@/context/AuthContext';
 import { useNavigation } from '@/hooks/useNavigation';
 import { useIsMobile } from '@/hooks/useMediaQuery';
@@ -63,8 +63,6 @@ export function LeaderboardTable({ seasonId }: LeaderboardProps) {
   const [isPlayerCardOpen, setIsPlayerCardOpen] = useState(false);
   const [compareIds, setCompareIds] = useState<Set<string>>(new Set());
   const [isCompareOpen, setIsCompareOpen] = useState(false);
-  const [lastUpdated, setLastUpdated] = useState<Date | null>(null);
-  const fetchLeaderboardRef = useRef<(() => void) | null>(null);
 
   // Use mobile detection hook (replaces duplicate logic)
   const isMobile = useIsMobile();
@@ -138,9 +136,9 @@ export function LeaderboardTable({ seasonId }: LeaderboardProps) {
   }, []);
 
   // Fetch leaderboard data
-  const fetchLeaderboard = useCallback(async (showLoading = true) => {
+  const fetchLeaderboard = useCallback(async () => {
     if (!selectedSeason) return;
-    if (showLoading) setLoading(true);
+    setLoading(true);
     try {
       const rawData = await getSeasonLeaderboard(selectedSeason);
 
@@ -158,7 +156,6 @@ export function LeaderboardTable({ seasonId }: LeaderboardProps) {
 
       const sortedData = validData.sort((a, b) => b.total_points - a.total_points);
       setLeaderboardData(sortedData);
-      setLastUpdated(new Date());
     } catch (error) {
       console.error('Error fetching leaderboard:', error);
       setLeaderboardData([]);
@@ -167,24 +164,10 @@ export function LeaderboardTable({ seasonId }: LeaderboardProps) {
     }
   }, [selectedSeason]);
 
-  // Store ref for real-time callback
-  useEffect(() => {
-    fetchLeaderboardRef.current = () => fetchLeaderboard(false);
-  }, [fetchLeaderboard]);
-
   // Fetch on season change
   useEffect(() => {
     fetchLeaderboard();
   }, [fetchLeaderboard]);
-
-  // Real-time subscription
-  useEffect(() => {
-    if (!selectedSeason) return;
-    const unsubscribe = subscribeToScoreChanges(selectedSeason, () => {
-      fetchLeaderboardRef.current?.();
-    });
-    return unsubscribe;
-  }, [selectedSeason]);
 
   // Get rank badge/icon
   const getRankDisplay = (rank: number) => {
@@ -379,11 +362,6 @@ export function LeaderboardTable({ seasonId }: LeaderboardProps) {
             </CardTitle>
             <CardDescription className="text-sm sm:text-base">
               See who&apos;s leading the competition
-              {lastUpdated && (
-                <span className="ml-2 text-xs text-green-600 font-medium">
-                  &bull; Live
-                </span>
-              )}
             </CardDescription>
           </div>
           <div className="flex gap-2">

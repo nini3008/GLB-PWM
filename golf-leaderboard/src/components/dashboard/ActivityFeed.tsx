@@ -4,7 +4,7 @@ import React, { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { Activity, ChevronRight } from 'lucide-react';
 import { Skeleton } from '@/components/ui/skeleton';
-import { getUserActivityFeed, subscribeToScoreChanges } from '@/lib/supabase/client';
+import { getUserActivityFeed } from '@/lib/supabase/client';
 import { formatRelativeTime } from '@/lib/utils';
 
 interface ActivityFeedProps {
@@ -37,13 +37,6 @@ export default function ActivityFeed({ userId }: ActivityFeedProps) {
 
   useEffect(() => {
     fetchActivity();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [userId]);
-
-  // Real-time: refetch on any score change
-  useEffect(() => {
-    const unsubscribe = subscribeToScoreChanges('activity-feed', fetchActivity);
-    return unsubscribe;
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [userId]);
 
