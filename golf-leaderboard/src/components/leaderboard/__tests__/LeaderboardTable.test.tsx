@@ -484,19 +484,23 @@ describe('LeaderboardTable Component', () => {
 
   describe('Responsive Behavior', () => {
     it('should render mobile view when viewport width is less than 768px', async () => {
-      Object.defineProperty(window, 'innerWidth', {
-        writable: true,
-        configurable: true,
-        value: 375,
-      })
+      // Mock matchMedia to return mobile view
+      const mockMatchMedia = jest.fn().mockImplementation((query: string) => ({
+        matches: query === '(max-width: 768px)',
+        media: query,
+        onchange: null,
+        addListener: jest.fn(),
+        removeListener: jest.fn(),
+        addEventListener: jest.fn(),
+        removeEventListener: jest.fn(),
+        dispatchEvent: jest.fn(),
+      }))
+      window.matchMedia = mockMatchMedia
 
       render(
         <LeaderboardTable />,
         { authContext: { user: mockUser, profile: mockProfile } }
       )
-
-      // Trigger resize event
-      window.dispatchEvent(new Event('resize'))
 
       await waitFor(() => {
         expect(screen.getByText('john_doe')).toBeInTheDocument()
@@ -507,11 +511,18 @@ describe('LeaderboardTable Component', () => {
     })
 
     it('should render desktop table view when viewport width is >= 768px', async () => {
-      Object.defineProperty(window, 'innerWidth', {
-        writable: true,
-        configurable: true,
-        value: 1024,
-      })
+      // Mock matchMedia to return desktop view
+      const mockMatchMedia = jest.fn().mockImplementation((query: string) => ({
+        matches: false, // Desktop: max-width: 768px does NOT match
+        media: query,
+        onchange: null,
+        addListener: jest.fn(),
+        removeListener: jest.fn(),
+        addEventListener: jest.fn(),
+        removeEventListener: jest.fn(),
+        dispatchEvent: jest.fn(),
+      }))
+      window.matchMedia = mockMatchMedia
 
       render(
         <LeaderboardTable />,

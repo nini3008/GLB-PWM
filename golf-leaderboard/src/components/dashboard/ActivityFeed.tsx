@@ -1,7 +1,8 @@
 'use client'
 
 import React, { useEffect, useState } from 'react';
-import { Activity } from 'lucide-react';
+import { useRouter } from 'next/navigation';
+import { Activity, ChevronRight } from 'lucide-react';
 import { Skeleton } from '@/components/ui/skeleton';
 import { getUserActivityFeed, subscribeToScoreChanges } from '@/lib/supabase/client';
 import { formatRelativeTime } from '@/lib/utils';
@@ -17,6 +18,7 @@ const borderColors: Record<string, string> = {
 };
 
 export default function ActivityFeed({ userId }: ActivityFeedProps) {
+  const router = useRouter();
   const [items, setItems] = useState<Awaited<ReturnType<typeof getUserActivityFeed>>>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(false);
@@ -45,6 +47,17 @@ export default function ActivityFeed({ userId }: ActivityFeedProps) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [userId]);
 
+  const handleItemClick = (item: (typeof items)[0]) => {
+    // Navigate based on activity type
+    if (item.type === 'score') {
+      router.push('/scores/view');
+    } else if (item.type === 'game') {
+      router.push('/leaderboard');
+    } else if (item.type === 'achievement') {
+      router.push('/leaderboard');
+    }
+  };
+
   return (
     <div className="bg-white rounded-xl p-6 border border-gray-100">
       <div className="flex items-center gap-2 mb-4">
@@ -72,17 +85,21 @@ export default function ActivityFeed({ userId }: ActivityFeedProps) {
       ) : items.length === 0 ? (
         <p className="text-gray-500 text-sm text-center py-4">No recent activity in your seasons</p>
       ) : (
-        <div className="space-y-2 max-h-96 overflow-y-auto">
+        <div className="space-y-1 max-h-96 overflow-y-auto">
           {items.map((item, i) => (
             <div
               key={i}
-              className={`border-l-4 ${borderColors[item.type]} pl-3 py-2`}
+              onClick={() => handleItemClick(item)}
+              className={`border-l-4 ${borderColors[item.type]} pl-3 py-2 pr-2 rounded-r-lg cursor-pointer hover:bg-gray-50 transition-colors duration-150 flex items-center justify-between group`}
             >
-              <p className="text-sm text-gray-800">
-                <span className="font-semibold">{item.playerName}</span>{' '}
-                {item.details}
-              </p>
-              <p className="text-xs text-gray-400">{formatRelativeTime(item.timestamp)}</p>
+              <div className="flex-1 min-w-0">
+                <p className="text-sm text-gray-800">
+                  <span className="font-semibold">{item.playerName}</span>{' '}
+                  {item.details}
+                </p>
+                <p className="text-xs text-gray-400">{formatRelativeTime(item.timestamp)}</p>
+              </div>
+              <ChevronRight className="h-4 w-4 text-gray-300 group-hover:text-gray-500 flex-shrink-0 transition-colors" />
             </div>
           ))}
         </div>

@@ -5,7 +5,7 @@ import React from 'react';
 interface DashboardCardProps {
   title: string;
   icon: React.ReactNode;
-  description: string;
+  description?: string;
   onClick: () => void;
   isAdmin?: boolean;
 }
@@ -22,7 +22,6 @@ export default function DashboardCard({
     hover: 'hover:bg-amber-100',
     iconBg: 'bg-amber-100',
     iconText: 'text-amber-600',
-    badge: 'bg-amber-100 text-amber-800'
   };
 
   const userColors = {
@@ -30,7 +29,6 @@ export default function DashboardCard({
     hover: 'hover:bg-green-100',
     iconBg: 'bg-green-100',
     iconText: 'text-green-600',
-    badge: ''
   };
 
   const colors = isAdmin ? adminColors : userColors;
@@ -40,18 +38,15 @@ export default function DashboardCard({
       className={`${colors.bg} ${colors.hover} rounded-xl border border-gray-100 transition-all duration-300 cursor-pointer overflow-hidden group`}
       onClick={onClick}
     >
-      <div className="p-6">
-        <div className="flex items-start">
-          <div className={`p-3 rounded-full mr-4 ${colors.iconBg} ${colors.iconText} transform group-hover:scale-110 transition-transform duration-300`}>
+      <div className="p-4">
+        <div className="flex items-center gap-3">
+          <div className={`p-2.5 rounded-full ${colors.iconBg} ${colors.iconText} transform group-hover:scale-110 transition-transform duration-300`}>
             {icon}
           </div>
-          <div>
-            <h3 className="font-bold text-lg text-gray-800 mb-1">{title}</h3>
-            <p className="text-gray-600 text-sm">{description}</p>
-            {isAdmin && (
-              <span className={`text-xs ${colors.badge} px-2 py-1 rounded-full mt-2 inline-block font-medium`}>
-                Admin
-              </span>
+          <div className="flex-1 min-w-0">
+            <h3 className="font-semibold text-gray-800">{title}</h3>
+            {description && (
+              <p className="text-gray-500 text-sm truncate">{description}</p>
             )}
           </div>
         </div>

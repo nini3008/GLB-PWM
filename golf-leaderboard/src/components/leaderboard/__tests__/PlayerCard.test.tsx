@@ -749,8 +749,10 @@ describe('PlayerCard Component', () => {
         expect(dialog).toBeInTheDocument()
       })
 
-      // Dialog should have an accessible title
-      expect(screen.getByText('Player Profile - John Doe', { exact: false })).toBeInTheDocument()
+      // Dialog should have an accessible title (wait for data to load)
+      await waitFor(() => {
+        expect(screen.getByText('Player Profile - John Doe', { exact: false })).toBeInTheDocument()
+      })
     })
 
     it('should have proper tab accessibility', async () => {
