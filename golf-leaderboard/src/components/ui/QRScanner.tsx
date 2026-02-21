@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useRef, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import { Html5Qrcode } from 'html5-qrcode'
 import { Camera, XCircle } from 'lucide-react'
 
@@ -14,6 +14,20 @@ export default function QRScanner({ onScan, onClose }: QRScannerProps) {
   const scannerRef = useRef<Html5Qrcode | null>(null)
   const containerId = 'qr-reader'
 
+  // Use refs to avoid re-triggering effect when callbacks change
+  const onScanRef = useRef(onScan)
+  const onCloseRef = useRef(onClose)
+  useEffect(() => {
+    onScanRef.current = onScan
+    onCloseRef.current = onClose
+  })
+
+  const handleScan = useCallback((decodedText: string) => {
+    onScanRef.current(decodedText)
+    scannerRef.current?.stop().catch(() => {})
+    onCloseRef.current()
+  }, [])
+
   useEffect(() => {
     const scanner = new Html5Qrcode(containerId)
     scannerRef.current = scanner
@@ -22,11 +36,7 @@ export default function QRScanner({ onScan, onClose }: QRScannerProps) {
       .start(
         { facingMode: 'environment' },
         { fps: 10, qrbox: { width: 250, height: 250 } },
-        (decodedText) => {
-          onScan(decodedText)
-          scanner.stop().catch(() => {})
-          onClose()
-        },
+        handleScan,
         () => {}
       )
       .catch((err) => {
@@ -37,8 +47,7 @@ export default function QRScanner({ onScan, onClose }: QRScannerProps) {
     return () => {
       scanner.stop().catch(() => {})
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [])
+  }, [handleScan])
 
   return (
     <div className="fixed inset-0 z-50 bg-black/70 flex items-center justify-center p-4">

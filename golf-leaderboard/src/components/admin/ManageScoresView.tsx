@@ -54,6 +54,7 @@ import {
 import { formatDate } from '@/lib/utils';
 import { useNavigation } from '@/hooks/useNavigation';
 import { calculatePoints, updateBonusPoints } from '@/lib/utils/scoring';
+import { ScoreWithPlayer, GameWithCourse, filterValidScores } from '@/types/scores';
 
 // Form validation schema
 const editScoreFormSchema = z.object({
@@ -65,32 +66,6 @@ const editScoreFormSchema = z.object({
 });
 
 type EditScoreFormValues = z.infer<typeof editScoreFormSchema>;
-
-// Types
-interface ScoreWithPlayer {
-  id: string;
-  player_id: string;
-  raw_score: number;
-  points: number;
-  bonus_points: number;
-  notes: string | null;
-  submitted_at: string;
-  profiles: {
-    username: string;
-    profile_image_url: string | null;
-  };
-}
-
-interface GameWithCourse {
-  id: string;
-  name: string;
-  game_date: string;
-  courses: {
-    id: string;
-    name: string;
-    par: number;
-  };
-}
 
 export default function ManageScoresView() {
   const { user } = useUser();
@@ -152,8 +127,7 @@ export default function ManageScoresView() {
       const scores = await getGameScores(game.id);
       
       // Transform scores to match expected format
-      const validScores = scores
-        .filter(score => score.id && score.player_id) // Filter out any invalid entries
+      const validScores = filterValidScores(scores)
         .map(score => ({
           id: score.id,
           player_id: score.player_id,
@@ -224,7 +198,7 @@ export default function ManageScoresView() {
     setIsLoading(true);
     try {
       // Recalculate points based on new raw score
-      const points = calculatePoints(values.rawScore, selectedGame.courses.par);
+      const points = calculatePoints(values.rawScore);
       
       // Update the score
       await updateScore(editingScoreId, {
@@ -239,8 +213,7 @@ export default function ManageScoresView() {
       const updatedScores = await getGameScores(selectedGame.id);
       
       // Transform the updated scores
-      const validUpdatedScores = updatedScores
-        .filter(score => score.id && score.player_id)
+      const validUpdatedScores = filterValidScores(updatedScores)
         .map(score => ({
           id: score.id,
           player_id: score.player_id,
@@ -254,7 +227,7 @@ export default function ManageScoresView() {
             profile_image_url: score.profiles?.profile_image_url
           }
         }));
-      
+
       // Recalculate bonus points for all players in this round
       const playerBonusUpdates = updateBonusPoints(
         validUpdatedScores.map(score => ({
@@ -283,8 +256,7 @@ export default function ManageScoresView() {
       const finalScores = await getGameScores(selectedGame.id);
       
       // Transform the final scores
-      const validFinalScores = finalScores
-        .filter(score => score.id && score.player_id)
+      const validFinalScores = filterValidScores(finalScores)
         .map(score => ({
           id: score.id,
           player_id: score.player_id,
@@ -333,10 +305,9 @@ export default function ManageScoresView() {
       
       // Refresh scores
       const updatedScores = await getGameScores(selectedGame.id);
-      
+
       // Transform the updated scores
-      const validUpdatedScores = updatedScores
-        .filter(score => score.id && score.player_id)
+      const validUpdatedScores = filterValidScores(updatedScores)
         .map(score => ({
           id: score.id,
           player_id: score.player_id,
@@ -350,9 +321,9 @@ export default function ManageScoresView() {
             profile_image_url: score.profiles?.profile_image_url
           }
         }));
-      
+
       setGameScores(validUpdatedScores);
-      
+
       // Reset state
       setShowDeleteConfirm(null);
       

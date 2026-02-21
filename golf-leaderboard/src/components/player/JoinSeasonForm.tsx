@@ -32,6 +32,7 @@ import {
 import { joinSeason, getUserSeasons } from '@/lib/supabase/client';
 import { Badge } from '@/components/ui/badge';
 import QRScanner from '@/components/ui/QRScanner';
+import { UserSeason } from '@/types/scores';
 
 // Form validation schema
 const seasonFormSchema = z.object({
@@ -46,8 +47,7 @@ export default function JoinSeasonForm() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isSuccess, setIsSuccess] = useState(false);
   const [seasonError, setSeasonError] = useState<string | null>(null);
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const [userSeasons, setUserSeasons] = useState<any[]>([]);
+  const [userSeasons, setUserSeasons] = useState<UserSeason[]>([]);
   const [isLoadingSeasons, setIsLoadingSeasons] = useState(true);
   const [showQRScanner, setShowQRScanner] = useState(false);
 
@@ -124,15 +124,15 @@ export default function JoinSeasonForm() {
       setTimeout(() => {
         nav.goToDashboard();
       }, 3000);
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    } catch (error: any) {
+    } catch (error: unknown) {
       // Set specific error messages based on the error type
-      if (error.message?.includes("duplicate key")) {
+      const err = error as { message?: string };
+      if (err.message?.includes("duplicate key")) {
         setSeasonError("You've already joined this season");
         toast.error("Already joined", {
           description: "You've already joined this season."
         });
-      } else if (error.message?.includes("not found")) {
+      } else if (err.message?.includes("not found")) {
         setSeasonError("Season code not found. Please check and try again");
         toast.error("Season not found", {
           description: "Season code not found. Please check and try again."

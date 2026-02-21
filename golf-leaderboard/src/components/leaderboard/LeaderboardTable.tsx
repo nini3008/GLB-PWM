@@ -119,10 +119,8 @@ export function LeaderboardTable({ seasonId }: LeaderboardProps) {
         
         if (data && data.length > 0) {
           setSeasons(data);
-          // Set the first season as default if none provided
-          if (!selectedSeason) {
-            setSelectedSeason(data[0].id);
-          }
+          // Set the first season as default if none provided (using callback to avoid stale closure)
+          setSelectedSeason(prev => prev ?? data[0].id);
         }
       } catch (error) {
         console.error('Error fetching seasons:', error);
@@ -132,7 +130,6 @@ export function LeaderboardTable({ seasonId }: LeaderboardProps) {
     };
 
     fetchSeasons();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   // Fetch leaderboard data

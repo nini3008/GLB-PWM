@@ -43,6 +43,7 @@ import {
 } from '@/lib/supabase/client';
 import { formatDate } from '@/lib/utils';
 import { calculatePoints, updateBonusPoints } from '@/lib/utils/scoring';
+import { ScoreWithPlayer, GameWithCourse, filterValidScores } from '@/types/scores';
 
 // Form validation schema
 const editScoreFormSchema = z.object({
@@ -54,32 +55,6 @@ const editScoreFormSchema = z.object({
 });
 
 type EditScoreFormValues = z.infer<typeof editScoreFormSchema>;
-
-// Types
-interface ScoreWithPlayer {
-    id: string;
-    player_id: string;
-    raw_score: number;
-    points: number;
-    bonus_points: number;
-    notes: string | null;
-    submitted_at: string;
-    profiles: {
-      username: string;
-      profile_image_url: string | null;
-    };
-  }
-  
-  interface GameWithCourse {
-    id: string;
-    name: string;
-    game_date: string;
-    courses: {
-      id: string;
-      name: string;
-      par: number;
-    };
-  }
 
 export function AdminScoreManagement({ onReturn }: { onReturn: () => void }) {
   const { user } = useUser();
@@ -151,8 +126,7 @@ useEffect(() => {
       const rawScores = await getGameScores(game.id);
       
       // Transform the data to ensure it matches our expected types
-      const validScores = rawScores
-        .filter(score => score.id && score.player_id) // Filter out any invalid entries
+      const validScores = filterValidScores(rawScores)
         .map(score => ({
           id: score.id,
           player_id: score.player_id,
@@ -220,7 +194,7 @@ useEffect(() => {
     setIsLoading(true);
     try {
       // Recalculate points based on new raw score
-      const points = calculatePoints(values.rawScore, selectedGame.courses.par);
+      const points = calculatePoints(values.rawScore);
       
       // Update the score
       await updateScore(editingScoreId, {

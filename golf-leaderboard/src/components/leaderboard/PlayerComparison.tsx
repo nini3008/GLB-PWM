@@ -1,6 +1,6 @@
 'use client'
 
-import React, { useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
@@ -51,14 +51,7 @@ export default function PlayerComparison({ player1Id, player2Id, seasonId, isOpe
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  useEffect(() => {
-    if (isOpen && player1Id && player2Id && seasonId) {
-      loadData();
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [isOpen, player1Id, player2Id, seasonId]);
-
-  async function loadData() {
+  const loadData = useCallback(async () => {
     setLoading(true);
     setError(null);
     try {
@@ -70,7 +63,13 @@ export default function PlayerComparison({ player1Id, player2Id, seasonId, isOpe
     } finally {
       setLoading(false);
     }
-  }
+  }, [player1Id, player2Id, seasonId]);
+
+  useEffect(() => {
+    if (isOpen && player1Id && player2Id && seasonId) {
+      loadData();
+    }
+  }, [isOpen, player1Id, player2Id, seasonId, loadData]);
 
   const getInitials = (username: string) => {
     return username

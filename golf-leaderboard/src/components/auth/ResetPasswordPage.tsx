@@ -111,9 +111,9 @@ export default function ResetPasswordPage() {
       } else {
         setSuccess(true);
       }
-       // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    } catch (err: any) {
-      logger.debug('Password update caught exception:', err.message);
+    } catch (err: unknown) {
+      const error = err as { message?: string };
+      logger.debug('Password update caught exception:', error.message);
       // For any errors, assume success since we know it probably worked
       setSuccess(true);
     } finally {

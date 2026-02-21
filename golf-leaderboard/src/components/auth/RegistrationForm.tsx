@@ -1,6 +1,6 @@
 'use client'
 
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { useAuth } from '@/context/AuthContext';
 import { useNavigation } from '@/hooks/useNavigation';
 import { User, CheckCircle } from 'lucide-react';
@@ -20,21 +20,25 @@ export default function RegisterForm() {
 
   const { signUp } = useAuth();
 
+  // Memoize goToLogin to use in countdown effect
+  const goToLogin = useCallback(() => {
+    nav.goToLogin();
+  }, [nav]);
+
   useEffect(() => {
     if (!registrationSuccess) return;
     countdownRef.current = setInterval(() => {
       setCountdown(prev => {
         if (prev <= 1) {
           clearInterval(countdownRef.current);
-          nav.goToLogin();
+          goToLogin();
           return 0;
         }
         return prev - 1;
       });
     }, 1000);
     return () => clearInterval(countdownRef.current);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [registrationSuccess]);
+  }, [registrationSuccess, goToLogin]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();

@@ -1,6 +1,6 @@
 'use client'
 
-import React, { useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
 import { AlertTriangle, ChevronDown, ChevronUp } from 'lucide-react';
 import { getUserPendingGames } from '@/lib/supabase/client';
 import { formatDate } from '@/lib/utils';
@@ -16,7 +16,7 @@ export default function PendingScoresBanner({ userId, onNavigateToEnterScore }: 
   const [expanded, setExpanded] = useState(false);
   const [error, setError] = useState(false);
 
-  const fetchGames = () => {
+  const fetchGames = useCallback(() => {
     setError(false);
     setLoading(true);
     getUserPendingGames(userId)
@@ -26,12 +26,11 @@ export default function PendingScoresBanner({ userId, onNavigateToEnterScore }: 
         setError(true);
       })
       .finally(() => setLoading(false));
-  };
+  }, [userId]);
 
   useEffect(() => {
     fetchGames();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [userId]);
+  }, [fetchGames]);
 
   if (error) {
     return (

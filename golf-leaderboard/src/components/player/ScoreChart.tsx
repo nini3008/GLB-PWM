@@ -49,8 +49,7 @@ export default function ScoreChart({ scores }: ScoreChartProps) {
   const yAxisMin = Math.floor(Math.min(minScore, averagePar) - 5);
   const yAxisMax = Math.ceil(Math.max(maxScore, averagePar) + 5);
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const CustomTooltip = ({ active, payload }: any) => {
+  const CustomTooltip = ({ active, payload }: { active?: boolean; payload?: Array<{ payload: { courseName: string; date: string; score: number; par: number } }> }) => {
     if (active && payload && payload.length) {
       const data = payload[0].payload;
       const scoreDiff = data.score - data.par;

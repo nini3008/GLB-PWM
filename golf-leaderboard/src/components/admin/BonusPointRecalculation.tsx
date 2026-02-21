@@ -83,10 +83,10 @@ export default function BonusPointRecalculation() {
       toast.success('Round code validated', {
         description: `Found ${currentScores.length} scores for ${game.name}`
       });
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    } catch (error: any) {
+    } catch (error: unknown) {
+      const err = error as { message?: string };
       toast.error('Error validating round code', {
-        description: error.message
+        description: err.message || 'Unknown error'
       });
     } finally {
       setIsLoading(false);
@@ -104,11 +104,11 @@ export default function BonusPointRecalculation() {
     try {
       const result = await recalculateBonusPoints(gameDetails.id);
       setResults(result);
-      
+
       // Reload scores after recalculation
       const updatedScores = await getGameScores(gameDetails.id);
       setScores(updatedScores as ApiScore[]);
-      
+
       if (result.success) {
         toast.success('Bonus points recalculated successfully', {
           description: `Updated ${result.updatedScores.length} scores`
@@ -118,10 +118,10 @@ export default function BonusPointRecalculation() {
           description: `${result.updatedScores.length} succeeded, ${result.failedUpdates.length} failed`
         });
       }
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    } catch (error: any) {
+    } catch (error: unknown) {
+      const err = error as { message?: string };
       toast.error('Error recalculating bonus points', {
-        description: error.message
+        description: err.message || 'Unknown error'
       });
     } finally {
       setIsLoading(false);

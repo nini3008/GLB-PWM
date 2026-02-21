@@ -1,6 +1,6 @@
 'use client'
 
-import React, { useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { Activity, ChevronRight } from 'lucide-react';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -23,7 +23,7 @@ export default function ActivityFeed({ userId }: ActivityFeedProps) {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(false);
 
-  const fetchActivity = () => {
+  const fetchActivity = useCallback(() => {
     setError(false);
     setLoading(true);
     getUserActivityFeed(userId)
@@ -33,12 +33,11 @@ export default function ActivityFeed({ userId }: ActivityFeedProps) {
         setError(true);
       })
       .finally(() => setLoading(false));
-  };
+  }, [userId]);
 
   useEffect(() => {
     fetchActivity();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [userId]);
+  }, [fetchActivity]);
 
   const handleItemClick = (item: (typeof items)[0]) => {
     // Navigate based on activity type

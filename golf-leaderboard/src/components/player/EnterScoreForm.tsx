@@ -171,23 +171,23 @@ export default function EnterScoreForm() {
       toast.success("Round code valid", {
         description: `Ready to submit score for ${game.name} at ${game.courses.name}`,
       });
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    } catch (error: any) {
+    } catch (error: unknown) {
+      const err = error as { message?: string; status?: number; details?: string; error_description?: string };
       if (process.env.NODE_ENV !== 'production') {
         logger.error("Round code validation error:", {
           error,
-          message: error.message || "No error message",
-          status: error.status,
-          details: error.details || error.error_description,
+          message: err.message || "No error message",
+          status: err.status,
+          details: err.details || err.error_description,
         });
       }
-      
+
       // Check for "no rows" type errors which mean invalid code
-      if (error.message?.includes("no rows") || 
-          error.message?.includes("multiple (or no) rows") ||
-          error.details?.includes("contains 0 rows")) {
+      if (err.message?.includes("no rows") ||
+          err.message?.includes("multiple (or no) rows") ||
+          err.details?.includes("contains 0 rows")) {
         setCodeError("Round code not found. Please check and try again");
-      } else if (error.status === 403) {
+      } else if (err.status === 403) {
         setCodeError("You don't have permission to access this round");
       } else {
         setCodeError("Invalid round code. Please check and try again");

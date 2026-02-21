@@ -55,9 +55,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [isAdmin, setIsAdmin] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [isInitialized, setIsInitialized] = useState(false);
-  
+
   // Use a ref to track tab activation time
   const lastTabActivationRef = useRef(0);
+  // Use a ref to track profile for use in auth subscription (avoids dependency issues)
+  const profileRef = useRef<UserProfile | null>(null);
+  useEffect(() => {
+    profileRef.current = profile;
+  }, [profile]);
 
   // Add a visibility change listener to detect when the tab becomes active again
   useEffect(() => {
@@ -164,7 +169,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         // For background events, still update the profile but don't show loading
         try {
           // Only fetch profile if this is not a tab activation event or we need a fresh copy
-          if (!isRecentTabActivation || !profile) {
+          if (!isRecentTabActivation || !profileRef.current) {
             const profileData = await getUserProfile(session.user.id);
             if (!mounted) return;
             

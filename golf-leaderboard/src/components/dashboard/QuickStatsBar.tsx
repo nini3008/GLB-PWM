@@ -1,6 +1,6 @@
 'use client'
 
-import React, { useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
 import { Trophy, Award, Calendar, TrendingUp } from 'lucide-react';
 import { Skeleton } from '@/components/ui/skeleton';
 import { getUserCurrentSeasonStats } from '@/lib/supabase/client';
@@ -14,7 +14,7 @@ export default function QuickStatsBar({ userId }: QuickStatsBarProps) {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(false);
 
-  const fetchStats = () => {
+  const fetchStats = useCallback(() => {
     setError(false);
     setLoading(true);
     getUserCurrentSeasonStats(userId)
@@ -24,12 +24,11 @@ export default function QuickStatsBar({ userId }: QuickStatsBarProps) {
         setError(true);
       })
       .finally(() => setLoading(false));
-  };
+  }, [userId]);
 
   useEffect(() => {
     fetchStats();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [userId]);
+  }, [fetchStats]);
 
   if (error) {
     return (

@@ -1,6 +1,6 @@
 'use client'
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useForm } from 'react-hook-form';
 import { z } from 'zod';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -147,19 +147,19 @@ export default function CreateGameForm() {
   }, []);
 
   // Generate a random round code
-  const generateRoundCode = () => {
+  const generateRoundCode = useCallback(() => {
     const characters = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'; // Removed similar looking characters
     let result = '';
     for (let i = 0; i < 6; i++) {
       result += characters.charAt(Math.floor(Math.random() * characters.length));
     }
     form.setValue('roundCode', result);
-  };
+  }, [form]);
 
   // Set default round code on first load
   useEffect(() => {
     generateRoundCode();
-  }, []);
+  }, [generateRoundCode]);
 
   // Handle form submission
   const handleSubmit = async (values: CreateGameFormValues) => {
@@ -211,10 +211,10 @@ export default function CreateGameForm() {
       setTimeout(() => {
         nav.goToDashboard();
       }, 5000);
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    } catch (error: any) {
+    } catch (error: unknown) {
+      const err = error as { message?: string };
       // Handle specific errors
-      if (error.message?.includes("duplicate key")) {
+      if (err.message?.includes("duplicate key")) {
         toast.error("Round code already exists", {
           description: "Please generate a new round code and try again."
         });

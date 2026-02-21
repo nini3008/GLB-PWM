@@ -33,9 +33,9 @@ export default function ForgotPasswordForm() {
       } else {
         setSuccess(true);
       }
-       // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    } catch (err: any) {
-      setError(err?.message || 'An unexpected error occurred');
+    } catch (err: unknown) {
+      const error = err as { message?: string };
+      setError(error?.message || 'An unexpected error occurred');
       console.error(err);
     } finally {
       setIsLoading(false);

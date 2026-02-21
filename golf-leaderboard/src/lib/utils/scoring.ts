@@ -28,8 +28,7 @@ export interface ScoreData {
    * - 75-79: 5 points
    * - Below 75: 6 points
    */
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  export function calculatePoints(rawScore: number, coursePar: number): number {
+  export function calculatePoints(rawScore: number): number {
     if (rawScore >= 100) return 0;
     if (rawScore >= 95) return 1;
     if (rawScore >= 90) return 2;
@@ -61,7 +60,7 @@ export function calculateFullScore(
   ): CalculatedScore {
     const { rawScore, coursePar } = scoreData;
     const overPar = rawScore - coursePar;
-    const points = calculatePoints(rawScore, coursePar);
+    const points = calculatePoints(rawScore);
     
     // Find the current lowest score among existing scores
     const currentLowestScore = allScoresInRound.length > 0 
@@ -117,8 +116,7 @@ export function updateBonusPoints(allScoresInRound: {
   /**
    * Get the most recent 10 rounds for display
    */
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  export function getRecentRounds(rounds: any[], limit: number = 10) {
+  export function getRecentRounds<T extends { game_date: string }>(rounds: T[], limit: number = 10): T[] {
     return [...rounds]
       .sort((a, b) => new Date(b.game_date).getTime() - new Date(a.game_date).getTime())
       .slice(0, limit);

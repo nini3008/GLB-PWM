@@ -6,6 +6,23 @@ interface PlayerAward {
   value: number | string
 }
 
+// Types for Supabase join results
+interface GameWithCourse {
+  id: string
+  courses: { par: number } | null
+}
+
+interface ScoreWithProfile {
+  id: string
+  player_id: string
+  game_id: string
+  raw_score: number
+  points: number
+  bonus_points: number
+  submitted_at: string
+  profiles: { username: string } | null
+}
+
 export interface SeasonSummaryData {
   mvp: PlayerAward | null
   mostImproved: PlayerAward | null
@@ -29,8 +46,8 @@ export async function getSeasonSummary(seasonId: string): Promise<SeasonSummaryD
   }
 
   const gameIds = games.map(g => g.id)
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const gamePar: Record<string, number> = Object.fromEntries(games.map(g => [g.id, (g.courses as any)?.par || 72]))
+  const gamesTyped = games as GameWithCourse[]
+  const gamePar: Record<string, number> = Object.fromEntries(gamesTyped.map(g => [g.id, g.courses?.par || 72]))
 
   const { data: scores, error } = await supabase
     .from('scores')
@@ -55,10 +72,10 @@ export async function getSeasonSummary(seasonId: string): Promise<SeasonSummaryD
   // Group scores by player
   const playerScores: Record<string, { username: string; scores: number[]; points: number; rawScores: { score: number; par: number }[] }> = {}
 
-  for (const score of scores) {
+  const scoresTyped = scores as ScoreWithProfile[]
+  for (const score of scoresTyped) {
     const pid = score.player_id
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const username = (score.profiles as any)?.username || 'Unknown'
+    const username = score.profiles?.username || 'Unknown'
     const par = gamePar[score.game_id] || 72
 
     if (!playerScores[pid]) {

@@ -271,11 +271,11 @@ export async function recalculateBonusPoints(gameId: string) {
             oldBonus: scoreToUpdate.bonus_points,
             newBonus: shouldHaveBonus
           });
-          // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        } catch (error: any) {
+        } catch (error: unknown) {
+          const err = error as { message?: string };
           failedUpdates.push({
             id: scoreToUpdate.id,
-            error: error.message
+            error: err.message || 'Unknown error'
           });
         }
       }

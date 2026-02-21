@@ -74,8 +74,9 @@ export default function BadgesDisplay({
 
   // Dynamically get Lucide icon
   const getIcon = (iconName: string) => {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const Icon = (LucideIcons as any)[iconName];
+    // Dynamic icon lookup requires type coercion as Lucide exports are complex
+    const icons = LucideIcons as unknown as Record<string, React.ComponentType<{ className?: string }>>;
+    const Icon = icons[iconName];
     return Icon ? <Icon className="h-5 w-5" /> : <LucideIcons.Award className="h-5 w-5" />;
   };
 

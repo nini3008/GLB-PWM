@@ -36,32 +36,12 @@ import {
 } from '@/lib/supabase/client';
 import { formatDate } from '@/lib/utils';
 import RoundRecap from './RoundRecap';
-
-// Types
-interface ScoreWithPlayer {
-  id: string;
-  player_id: string;
-  raw_score: number;
-  points: number;
-  bonus_points: number;
-  notes: string | null;
-  submitted_at: string;
-  profiles: {
-    username: string;
-    profile_image_url: string | null;
-  };
-}
-
-interface GameWithCourse {
-  id: string;
-  name: string;
-  game_date: string;
-  courses: {
-    id: string;
-    name: string;
-    par: number;
-  };
-}
+import {
+  ScoreWithPlayer,
+  GameWithCourse,
+  RoundRecap as RoundRecapType,
+  filterValidScores,
+} from '@/types/scores';
 
 export default function ViewScoresComponent() {
   const { user } = useUser();
@@ -73,8 +53,7 @@ export default function ViewScoresComponent() {
   const [codeError, setCodeError] = useState<string | null>(null);
   const [formattedDates, setFormattedDates] = useState<Record<string, string>>({});
   const [expandedNotes, setExpandedNotes] = useState<string | null>(null);
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const [roundRecap, setRoundRecap] = useState<any>(null);
+  const [roundRecap, setRoundRecap] = useState<RoundRecapType | null>(null);
 
   // Use mobile detection hook (replaces duplicate logic)
   const isMobile = useIsMobile();
@@ -118,8 +97,7 @@ export default function ViewScoresComponent() {
       const scores = await getGameScores(game.id);
       
       // Transform scores to match expected format
-      const validScores = scores
-        .filter(score => score.id && score.player_id) // Filter out any invalid entries
+      const validScores = filterValidScores(scores)
         .map(score => ({
           id: score.id,
           player_id: score.player_id,
